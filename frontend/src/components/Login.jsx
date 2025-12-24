@@ -74,7 +74,7 @@ function Login({ onLogin }) {
 
             {/* Login Card */}
             <div className="relative w-full max-w-md">
-                <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12 border border-white/20">
+                <div className="bg-white/20 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-12 border border-white/30">
                     {/* Logo/Header */}
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
@@ -82,10 +82,10 @@ function Login({ onLogin }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                         </div>
-                        <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-2">
+                        <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
                             Welcome Back
                         </h1>
-                        <p className="text-gray-600">Sign in to STL Unclaimed</p>
+                        <p className="text-white/90 drop-shadow">Sign in to STL Unclaimed</p>
                     </div>
 
                     {/* Error Message */}
@@ -104,7 +104,7 @@ function Login({ onLogin }) {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Username Field */}
                         <div className="space-y-2">
-                            <label htmlFor="username" className="block text-sm font-semibold text-gray-700">
+                            <label htmlFor="username" className="block text-sm font-semibold text-white drop-shadow">
                                 Username
                             </label>
                             <div className="relative">
@@ -127,7 +127,7 @@ function Login({ onLogin }) {
 
                         {/* Password Field */}
                         <div className="space-y-2">
-                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                            <label htmlFor="password" className="block text-sm font-semibold text-white drop-shadow">
                                 Password
                             </label>
                             <div className="relative">
@@ -146,22 +146,6 @@ function Login({ onLogin }) {
                                     disabled={isLoading}
                                 />
                             </div>
-                        </div>
-
-                        {/* Remember Me & Forgot Password */}
-                        <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <input
-                                    type="checkbox"
-                                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
-                                />
-                                <span className="text-sm text-gray-600 group-hover:text-gray-900 transition-colors">
-                                    Remember me
-                                </span>
-                            </label>
-                            <a href="#" className="text-sm font-semibold text-purple-600 hover:text-purple-700 transition-colors">
-                                Forgot password?
-                            </a>
                         </div>
 
                         {/* Submit Button */}
@@ -191,9 +175,9 @@ function Login({ onLogin }) {
 
                     {/* Footer */}
                     <div className="mt-8 pt-6 border-t border-gray-200">
-                        <p className="text-center text-sm text-gray-600">
+                        <p className="text-center text-sm text-white/80">
                             Secure login powered by{' '}
-                            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                            <span className="font-semibold text-white">
                                 STL Unclaimed
                             </span>
                         </p>
