@@ -1,64 +1,79 @@
 // Permission definitions for role-based access control
 export const PERMISSIONS = {
-    // Unclaimed permissions
+    // Page View permissions
+    VIEW_DASHBOARD: 'view_dashboard',
+    VIEW_UNCLAIMED: 'view_unclaimed_items',
+    VIEW_PENDING: 'view_pending',
+    VIEW_COLLECTIONS: 'view_collections',
+    VIEW_REPORTS: 'view_reports',
+    VIEW_USERS: 'view_users',
+
+    // Action permissions
     CREATE_UNCLAIMED: 'create_unclaimed',
     UPDATE_UNCLAIMED: 'update_unclaimed',
     DELETE_UNCLAIMED: 'delete_unclaimed',
     MARK_AS_COLLECTED: 'mark_as_collected',
-    VIEW_UNCLAIMED: 'view_unclaimed',
 
     // User permissions
     CREATE_USER: 'create_user',
     UPDATE_USER: 'update_user',
     DELETE_USER: 'delete_user',
-    VIEW_USERS: 'view_users',
 
-    // Reports permissions
-    VIEW_REPORTS: 'view_reports',
+    // Reports actions
     EXPORT_REPORTS: 'export_reports',
 }
 
 // Role-based permission mapping
 const rolePermissions = {
     'admin': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.VIEW_REPORTS,
+        PERMISSIONS.VIEW_USERS,
         PERMISSIONS.CREATE_UNCLAIMED,
         PERMISSIONS.UPDATE_UNCLAIMED,
         PERMISSIONS.DELETE_UNCLAIMED,
         PERMISSIONS.MARK_AS_COLLECTED,
-        PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.CREATE_USER,
         PERMISSIONS.UPDATE_USER,
         PERMISSIONS.DELETE_USER,
-        PERMISSIONS.VIEW_USERS,
-        PERMISSIONS.VIEW_REPORTS,
         PERMISSIONS.EXPORT_REPORTS,
     ],
     'specialist': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.VIEW_REPORTS,
         PERMISSIONS.CREATE_UNCLAIMED,
         PERMISSIONS.UPDATE_UNCLAIMED,
         PERMISSIONS.DELETE_UNCLAIMED,
         PERMISSIONS.MARK_AS_COLLECTED,
-        PERMISSIONS.VIEW_UNCLAIMED,
-        PERMISSIONS.VIEW_REPORTS,
         PERMISSIONS.EXPORT_REPORTS,
     ],
     'collector': [
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
         PERMISSIONS.CREATE_UNCLAIMED,
         PERMISSIONS.UPDATE_UNCLAIMED,
-        PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.MARK_AS_COLLECTED,
     ],
     'checker': [
-        PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.VIEW_DASHBOARD,
         PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.CREATE_UNCLAIMED,
     ],
     'staff': [
+        PERMISSIONS.VIEW_DASHBOARD,
         PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.VIEW_REPORTS,
     ],
     'general manager': [
-        PERMISSIONS.VIEW_UNCLAIMED,
-        PERMISSIONS.VIEW_USERS,
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_COLLECTIONS,
         PERMISSIONS.VIEW_REPORTS,
         PERMISSIONS.EXPORT_REPORTS,
     ],

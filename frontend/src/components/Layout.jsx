@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { authHelpers } from '../lib/supabase'
+import { hasPermission, PERMISSIONS } from '../utils/permissions'
 
 function Layout({ children, user }) {
     const location = useLocation()
@@ -26,13 +27,13 @@ function Layout({ children, user }) {
     }
 
     const navigation = [
-        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-        { name: 'Unclaimed', href: '/unclaimed', icon: Package },
-        { name: 'Pending', href: '/pending', icon: Clock },
-        { name: 'Collections', href: '/collections', icon: DollarSign },
-        { name: 'Reports', href: '/reports', icon: FileText },
-        { name: 'Users', href: '/users', icon: Users },
-    ]
+        { name: 'Dashboard', href: '/', icon: LayoutDashboard, permission: PERMISSIONS.VIEW_DASHBOARD },
+        { name: 'Unclaimed', href: '/unclaimed', icon: Package, permission: PERMISSIONS.VIEW_UNCLAIMED },
+        { name: 'Pending', href: '/pending', icon: Clock, permission: PERMISSIONS.VIEW_PENDING },
+        { name: 'Collections', href: '/collections', icon: DollarSign, permission: PERMISSIONS.VIEW_COLLECTIONS },
+        { name: 'Reports', href: '/reports', icon: FileText, permission: PERMISSIONS.VIEW_REPORTS },
+        { name: 'Users', href: '/users', icon: Users, permission: PERMISSIONS.VIEW_USERS },
+    ].filter(item => hasPermission(user, item.permission))
 
     const isActive = (path) => {
         if (path === '/') return location.pathname === '/'
@@ -67,7 +68,9 @@ function Layout({ children, user }) {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-semibold text-white truncate">{user?.fullname || 'User'}</p>
-                                <p className="text-xs text-indigo-200 truncate capitalize">{user?.role || 'Role'}</p>
+                                <p className="text-xs text-indigo-200 truncate">
+                                    {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -126,7 +129,9 @@ function Layout({ children, user }) {
                     <div className="bg-white border-t border-gray-200 shadow-xl">
                         <div className="px-4 py-3 bg-gray-50 border-b">
                             <p className="text-sm font-semibold text-gray-900">{user?.fullname || 'User'}</p>
-                            <p className="text-xs text-gray-600 capitalize">{user?.role || 'Role'}</p>
+                            <p className="text-xs text-gray-600">
+                                {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            </p>
                         </div>
                         <nav className="py-2">
                             {navigation.map((item) => {

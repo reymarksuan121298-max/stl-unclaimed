@@ -9,6 +9,7 @@ import Collections from './pages/Collections'
 import Reports from './pages/Reports'
 import Users from './pages/Users'
 import { authHelpers } from './lib/supabase'
+import { hasPermission, PERMISSIONS } from './utils/permissions'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -43,17 +44,39 @@ function App() {
     return <Login onLogin={handleLogin} />
   }
 
+  // Helper to find default landing page
+  const getDefaultRoute = () => {
+    if (hasPermission(user, PERMISSIONS.VIEW_DASHBOARD)) return '/'
+    if (hasPermission(user, PERMISSIONS.VIEW_UNCLAIMED)) return '/unclaimed'
+    if (hasPermission(user, PERMISSIONS.VIEW_PENDING)) return '/pending'
+    if (hasPermission(user, PERMISSIONS.VIEW_COLLECTIONS)) return '/collections'
+    if (hasPermission(user, PERMISSIONS.VIEW_REPORTS)) return '/reports'
+    if (hasPermission(user, PERMISSIONS.VIEW_USERS)) return '/users'
+    return '/unclaimed' // Fallback
+  }
+
+  const defaultRoute = getDefaultRoute()
+
+  // Helper for route guard
+  const ProtectedRoute = ({ element, permission }) => {
+    return hasPermission(user, permission) ? element : <Navigate to={defaultRoute} replace />
+  }
+
   // If logged in, show the app with routing
   return (
     <BrowserRouter>
       <Layout user={user}>
         <Routes>
-          <Route path="/" element={<Dashboard user={user} />} />
-          <Route path="/unclaimed" element={<Unclaimed user={user} />} />
-          <Route path="/pending" element={<Pending user={user} />} />
-          <Route path="/collections" element={<Collections user={user} />} />
-          <Route path="/reports" element={<Reports user={user} />} />
-          <Route path="/users" element={<Users user={user} />} />
+          <Route path="/" element={
+            hasPermission(user, PERMISSIONS.VIEW_DASHBOARD)
+              ? <Dashboard user={user} />
+              : <Navigate to={defaultRoute} replace />
+          } />
+          <Route path="/unclaimed" element={<ProtectedRoute element={<Unclaimed user={user} />} permission={PERMISSIONS.VIEW_UNCLAIMED} />} />
+          <Route path="/pending" element={<ProtectedRoute element={<Pending user={user} />} permission={PERMISSIONS.VIEW_PENDING} />} />
+          <Route path="/collections" element={<ProtectedRoute element={<Collections user={user} />} permission={PERMISSIONS.VIEW_COLLECTIONS} />} />
+          <Route path="/reports" element={<ProtectedRoute element={<Reports user={user} />} permission={PERMISSIONS.VIEW_REPORTS} />} />
+          <Route path="/users" element={<ProtectedRoute element={<Users user={user} />} permission={PERMISSIONS.VIEW_USERS} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
