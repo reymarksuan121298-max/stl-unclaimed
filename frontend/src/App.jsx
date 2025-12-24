@@ -49,11 +49,11 @@ function App() {
       <Layout user={user}>
         <Routes>
           <Route path="/" element={<Dashboard user={user} />} />
-          <Route path="/unclaimed" element={<Unclaimed />} />
-          <Route path="/pending" element={<Pending />} />
-          <Route path="/collections" element={<Collections />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/users" element={<Users />} />
+          <Route path="/unclaimed" element={<Unclaimed user={user} />} />
+          <Route path="/pending" element={<Pending user={user} />} />
+          <Route path="/collections" element={<Collections user={user} />} />
+          <Route path="/reports" element={<Reports user={user} />} />
+          <Route path="/users" element={<Users user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
