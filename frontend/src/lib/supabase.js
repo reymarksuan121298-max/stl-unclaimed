@@ -83,7 +83,7 @@ export const dataHelpers = {
                 return_date: returnDate,
                 // Prioritize the original assigned collector. 
                 // Only use the person marking it (collectorName) if it was empty.
-                collector: item.collector || collectorName || 'System'
+                collector: item.collector || collectorName || 'Collector'
             })
             .eq('id', id)
 
