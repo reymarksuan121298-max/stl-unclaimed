@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Package, Search, Plus, Trash2, Check, Filter, X, Edit } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
+import { hasPermission, PERMISSIONS, canPerformAction } from '../utils/permissions'
 
-function Unclaimed() {
+function Unclaimed({ user }) {
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
@@ -10,13 +11,19 @@ function Unclaimed() {
     const [filterArea, setFilterArea] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [editingItem, setEditingItem] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage] = useState(10)
     const [formData, setFormData] = useState({
         teller_name: '',
         bet_number: '',
         draw_date: '',
         win_amount: '',
+        charge_amount: '',
+        mode: 'Cash',
+        payment_type: 'Full Payment',
         franchise_name: '5A Royal Gaming OPC',
         area: '',
+        collector: '',
         return_date: ''
     })
 
@@ -24,12 +31,22 @@ function Unclaimed() {
         loadUnclaimed()
     }, [filterFranchise, filterArea])
 
+    useEffect(() => {
+        setCurrentPage(1) // Reset to first page when search/filter changes
+    }, [searchTerm, filterFranchise, filterArea])
+
     const loadUnclaimed = async () => {
         try {
             setLoading(true)
             const filters = {}
             if (filterFranchise) filters.franchise_name = filterFranchise
             if (filterArea) filters.area = filterArea
+
+            // If user is a collector, only fetch their items
+            if (user?.role?.toLowerCase() === 'collector') {
+                filters.collector = user.fullname
+            }
+
             const data = await dataHelpers.getUnclaimed(filters)
             setItems(data)
         } catch (error) {
@@ -87,8 +104,12 @@ function Unclaimed() {
                 bet_number: item.bet_number,
                 draw_date: item.draw_date,
                 win_amount: item.win_amount,
+                charge_amount: item.charge_amount || '',
+                mode: item.mode || 'Cash',
+                payment_type: item.payment_type || 'Full Payment',
                 franchise_name: item.franchise_name,
                 area: item.area || '',
+                collector: item.collector || (user?.role?.toLowerCase() === 'collector' ? user.fullname : ''),
                 return_date: formattedReturnDate
             })
         } else {
@@ -98,8 +119,12 @@ function Unclaimed() {
                 bet_number: '',
                 draw_date: '',
                 win_amount: '',
+                charge_amount: '',
+                mode: 'Cash',
+                payment_type: 'Full Payment',
                 franchise_name: '5A Royal Gaming OPC',
                 area: '',
+                collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : '',
                 return_date: ''
             })
         }
@@ -110,12 +135,19 @@ function Unclaimed() {
         e.preventDefault()
         try {
             setLoading(true)
+            const winAmountTotal = parseFloat(formData.win_amount || 0)
+            const chargeAmountTotal = parseFloat(formData.charge_amount || 0)
+            const netAmountTotal = winAmountTotal - chargeAmountTotal
+
             const payload = {
                 ...formData,
-                win_amount: parseFloat(formData.win_amount || 0),
-                net: parseFloat(formData.win_amount || 0) * 0.98,
+                win_amount: winAmountTotal,
+                charge_amount: chargeAmountTotal,
+                net: netAmountTotal,
                 status: editingItem ? editingItem.status : 'Unclaimed',
-                return_date: formData.return_date || null
+                return_date: formData.return_date || null,
+                // Automatically set collector if user is a collector
+                collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : formData.collector
             }
 
             if (editingItem) {
@@ -140,7 +172,18 @@ function Unclaimed() {
         item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber)
+    const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages))
+    const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
+
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
+    const areas = ['BAROY', 'KAPATAGAN', 'KOLAMBOGAN', 'LALA', 'MAIGO', 'SALVADOR', 'SAPAD', 'SND', 'TUBOD']
 
     if (loading && items.length === 0) {
         return (
@@ -164,106 +207,142 @@ function Unclaimed() {
                     </h1>
                     <p className="text-gray-600 mt-1">Manage all unclaimed winnings</p>
                 </div>
-                <button
-                    onClick={() => handleOpenModal()}
-                    className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-                >
-                    <Plus className="w-5 h-5" />
-                    Add Unclaimed Item
-                </button>
+                {hasPermission(user, PERMISSIONS.CREATE_UNCLAIMED) && (
+                    <button
+                        onClick={() => handleOpenModal()}
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                    >
+                        <Plus className="w-5 h-5" />
+                        Add Unclaimed Item
+                    </button>
+                )}
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by name or bet number..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                    </div>
+            {user?.role?.toLowerCase() !== 'collector' && (
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="unclaimed-search" className="sr-only">Search items</label>
+                            <input
+                                id="unclaimed-search"
+                                name="search"
+                                type="text"
+                                placeholder="Search by name or bet number..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                        </div>
 
-                    <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <select
-                            value={filterFranchise}
-                            onChange={(e) => setFilterFranchise(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
-                        >
-                            <option value="">All Franchises</option>
-                            {franchises.map(franchise => (
-                                <option key={franchise} value={franchise}>{franchise}</option>
-                            ))}
-                        </select>
-                    </div>
+                        <div className="relative">
+                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
+                            <select
+                                id="franchise-filter"
+                                name="franchise"
+                                value={filterFranchise}
+                                onChange={(e) => setFilterFranchise(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                            >
+                                <option value="">All Franchises</option>
+                                {franchises.map(franchise => (
+                                    <option key={franchise} value={franchise}>{franchise}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <select
-                            value={filterArea}
-                            onChange={(e) => setFilterArea(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
-                        >
-                            <option value="">All Areas</option>
-                            {[...new Set(items.map(i => i.area).filter(Boolean))].sort().map(area => (
-                                <option key={area} value={area}>{area}</option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="area-filter" className="sr-only">Filter by area</label>
+                            <select
+                                id="area-filter"
+                                name="area"
+                                value={filterArea}
+                                onChange={(e) => setFilterArea(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                            >
+                                <option value="">All Areas</option>
+                                {[...new Set(items.map(i => i.area).filter(Boolean))].sort().map(area => (
+                                    <option key={area} value={area}>{area}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full text-sm">
                         <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Teller Name</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Number</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Draw Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Win Amount</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Net (98%)</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Franchise</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Agent</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet #</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Draw Date</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Return Timestamp</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Win Amt</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Charge</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Net</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Mode</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Payment</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Franchise</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Area</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Status</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredItems.length === 0 ? (
+                            {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="px-6 py-12 text-center">
+                                    <td colSpan="13" className="px-6 py-12 text-center">
                                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No unclaimed items found</p>
                                     </td>
                                 </tr>
                             ) : (
-                                filteredItems.map((item) => (
+                                currentItems.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{item.teller_name}</div>
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.bet_number || 'N/A'}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                                             {new Date(item.draw_date).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-semibold text-green-600">
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
+                                            {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
+                                        </td>
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <span className="font-semibold text-green-600 text-xs">
                                                 ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-semibold text-indigo-600">
-                                                ₱{parseFloat(item.net || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <span className="text-xs text-red-600">
+                                                ₱{parseFloat(item.charge_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{item.franchise_name || 'N/A'}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${item.status === 'Unclaimed'
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <span className="font-semibold text-indigo-600 text-xs">
+                                                ₱{(parseFloat(item.net || 0) || (parseFloat(item.win_amount || 0) - parseFloat(item.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.mode || 'N/A'}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.payment_type === 'Full Payment'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-orange-100 text-orange-800'
+                                                }`}>
+                                                {item.payment_type === 'Full Payment' ? 'Full' : 'Partial'}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.franchise_name || 'N/A'}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Unclaimed'
                                                 ? 'bg-yellow-100 text-yellow-800'
                                                 : item.status === 'Collected'
                                                     ? 'bg-green-100 text-green-800'
@@ -272,31 +351,35 @@ function Unclaimed() {
                                                 {item.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                {item.status === 'Unclaimed' && (
+                                        <td className="px-3 py-2 whitespace-nowrap">
+                                            <div className="flex items-center gap-1">
+                                                {item.status === 'Unclaimed' && hasPermission(user, PERMISSIONS.MARK_AS_COLLECTED) && (
                                                     <button
                                                         onClick={() => handleMarkAsCollected(item.id)}
-                                                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                                         title="Mark as Collected"
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => handleOpenModal(item)}
-                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(item.id)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                {canPerformAction(user, PERMISSIONS.UPDATE_UNCLAIMED, item) && (
+                                                    <button
+                                                        onClick={() => handleOpenModal(item)}
+                                                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {hasPermission(user, PERMISSIONS.DELETE_UNCLAIMED) && (
+                                                    <button
+                                                        onClick={() => handleDelete(item.id)}
+                                                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -305,105 +388,259 @@ function Unclaimed() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredItems.length)} of {filteredItems.length} items
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={prevPage}
+                                disabled={currentPage === 1}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Previous
+                            </button>
+
+                            <div className="flex gap-1">
+                                {[...Array(totalPages)].map((_, index) => {
+                                    const pageNumber = index + 1
+                                    // Show first page, last page, current page, and pages around current
+                                    if (
+                                        pageNumber === 1 ||
+                                        pageNumber === totalPages ||
+                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <button
+                                                key={pageNumber}
+                                                onClick={() => paginate(pageNumber)}
+                                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === pageNumber
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        )
+                                    } else if (
+                                        pageNumber === currentPage - 2 ||
+                                        pageNumber === currentPage + 2
+                                    ) {
+                                        return <span key={pageNumber} className="px-2 text-gray-400">...</span>
+                                    }
+                                    return null
+                                })}
+                            </div>
+
+                            <button
+                                onClick={nextPage}
+                                disabled={currentPage === totalPages}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="px-8 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
-                            <h2 className="text-2xl font-bold">{editingItem ? 'Edit Unclaimed Item' : 'Add Unclaimed Item'}</h2>
-                            <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                                <X className="w-6 h-6" />
-                            </button>
+            {
+                showModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+                            <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between sticky top-0 z-10">
+                                <h2 className="text-xl font-bold">{editingItem ? 'Edit Unclaimed Item' : 'Add Unclaimed Item'}</h2>
+                                <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-agent" className="text-xs font-semibold text-gray-700">Agent Name</label>
+                                        <input
+                                            id="modal-agent"
+                                            name="teller_name"
+                                            required
+                                            value={formData.teller_name}
+                                            onChange={(e) => setFormData({ ...formData, teller_name: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="Enter agent name"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-bet" className="text-xs font-semibold text-gray-700">Bet Number</label>
+                                        <input
+                                            id="modal-bet"
+                                            name="bet_number"
+                                            required
+                                            value={formData.bet_number}
+                                            onChange={(e) => setFormData({ ...formData, bet_number: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="BET-000"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-draw-date" className="text-xs font-semibold text-gray-700">Draw Date</label>
+                                        <input
+                                            id="modal-draw-date"
+                                            name="draw_date"
+                                            type="date"
+                                            required
+                                            value={formData.draw_date}
+                                            onChange={(e) => setFormData({ ...formData, draw_date: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-win-amount" className="text-xs font-semibold text-gray-700">Win Amount</label>
+                                        <input
+                                            id="modal-win-amount"
+                                            name="win_amount"
+                                            type="number"
+                                            step="0.01"
+                                            required
+                                            value={formData.win_amount}
+                                            onChange={(e) => setFormData({ ...formData, win_amount: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-charge-amount" className="text-xs font-semibold text-gray-700">Charge Amount</label>
+                                        <input
+                                            id="modal-charge-amount"
+                                            name="charge_amount"
+                                            type="number"
+                                            step="0.01"
+                                            value={formData.charge_amount}
+                                            onChange={(e) => setFormData({ ...formData, charge_amount: e.target.value })}
+                                            disabled={formData.mode === 'Cash'}
+                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${formData.mode === 'Cash' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                            placeholder="0.00"
+                                        />
+                                        {formData.mode === 'Cash' && (
+                                            <p className="text-xs text-gray-500">No charge for Cash mode</p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-gray-700">Net Amount (Calculated)</label>
+                                        <div className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-semibold">
+                                            ₱{((parseFloat(formData.win_amount || 0) - parseFloat(formData.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        </div>
+                                        <p className="text-xs text-gray-500">Win Amount - Charge Amount</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-mode" className="text-xs font-semibold text-gray-700">Mode</label>
+                                        <select
+                                            id="modal-mode"
+                                            name="mode"
+                                            value={formData.mode}
+                                            onChange={(e) => {
+                                                const newMode = e.target.value;
+                                                setFormData({
+                                                    ...formData,
+                                                    mode: newMode,
+                                                    charge_amount: newMode === 'Cash' ? '0' : formData.charge_amount
+                                                });
+                                            }}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            <option value="Cash">Cash</option>
+                                            <option value="Back Transfer">Back Transfer</option>
+                                            <option value="Cebuana">Cebuana</option>
+                                            <option value="Gcash">Gcash</option>
+                                            <option value="Palawan">Palawan</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-payment-type" className="text-xs font-semibold text-gray-700">Payment Type</label>
+                                        <select
+                                            id="modal-payment-type"
+                                            name="payment_type"
+                                            value={formData.payment_type}
+                                            onChange={(e) => setFormData({ ...formData, payment_type: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            <option value="Full Payment">Full Payment</option>
+                                            <option value="Partial Payment">Partial Payment</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-franchise" className="text-xs font-semibold text-gray-700">Franchise</label>
+                                        <select
+                                            id="modal-franchise"
+                                            name="franchise_name"
+                                            required
+                                            value={formData.franchise_name}
+                                            onChange={(e) => setFormData({ ...formData, franchise_name: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            {franchises.map(f => <option key={f} value={f}>{f}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-area" className="text-xs font-semibold text-gray-700">Area</label>
+                                        <select
+                                            id="modal-area"
+                                            name="area"
+                                            value={formData.area}
+                                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            <option value="">Select Area</option>
+                                            {areas.map(area => <option key={area} value={area}>{area}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>
+                                        <input
+                                            id="modal-collector"
+                                            name="collector"
+                                            type="text"
+                                            value={formData.collector}
+                                            onChange={(e) => setFormData({ ...formData, collector: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${user?.role?.toLowerCase() === 'collector' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                            placeholder="Enter collector name"
+                                            readOnly={user?.role?.toLowerCase() === 'collector'}
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-return-date" className="text-xs font-semibold text-gray-700">Return Date & Time</label>
+                                        <input
+                                            id="modal-return-date"
+                                            name="return_date"
+                                            type="datetime-local"
+                                            value={formData.return_date}
+                                            onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="pt-3 flex gap-3">
+                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-all">
+                                        Cancel
+                                    </button>
+                                    <button type="submit" className="flex-1 px-4 py-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                        {editingItem ? 'Update Record' : 'Save Record'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Teller Name</label>
-                                    <input
-                                        required
-                                        value={formData.teller_name}
-                                        onChange={(e) => setFormData({ ...formData, teller_name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        placeholder="Enter teller name"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Bet Number</label>
-                                    <input
-                                        required
-                                        value={formData.bet_number}
-                                        onChange={(e) => setFormData({ ...formData, bet_number: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        placeholder="BET-000"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Draw Date</label>
-                                    <input
-                                        type="date"
-                                        required
-                                        value={formData.draw_date}
-                                        onChange={(e) => setFormData({ ...formData, draw_date: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Win Amount</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        required
-                                        value={formData.win_amount}
-                                        onChange={(e) => setFormData({ ...formData, win_amount: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        placeholder="0.00"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Franchise</label>
-                                    <select
-                                        required
-                                        value={formData.franchise_name}
-                                        onChange={(e) => setFormData({ ...formData, franchise_name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    >
-                                        {franchises.map(f => <option key={f} value={f}>{f}</option>)}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Area</label>
-                                    <input
-                                        value={formData.area}
-                                        onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        placeholder="Enter area"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Return Date & Time</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={formData.return_date}
-                                        onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-                            <div className="pt-4 flex gap-4">
-                                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-6 py-3 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-all font-medium">
-                                    Cancel
-                                </button>
-                                <button type="submit" className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all font-medium">
-                                    {editingItem ? 'Update Record' : 'Save Record'}
-                                </button>
-                            </div>
-                        </form>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
 
