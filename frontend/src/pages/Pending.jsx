@@ -2,21 +2,23 @@ import { useEffect, useState } from 'react'
 import { Clock, Search, Filter, AlertTriangle } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 
-function Pending() {
+function Pending({ user }) {
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterFranchise, setFilterFranchise] = useState('')
+    const [filterCollector, setFilterCollector] = useState('')
 
     useEffect(() => {
         loadPending()
-    }, [filterFranchise])
+    }, [filterFranchise, filterCollector])
 
     const loadPending = async () => {
         try {
             setLoading(true)
             const filters = {}
             if (filterFranchise) filters.franchise_name = filterFranchise
+            if (filterCollector) filters.collector = filterCollector
 
             const data = await dataHelpers.getPending(filters)
             setItems(data)
@@ -34,6 +36,7 @@ function Pending() {
     )
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
+    const collectors = [...new Set(items.map(i => i.collector).filter(Boolean))].sort()
 
     const getOverdueCategory = (days) => {
         if (days <= 7) return { label: 'Recently Overdue', color: 'bg-yellow-100 text-yellow-800' }
@@ -80,10 +83,13 @@ function Pending() {
 
             {/* Filters */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="pending-search" className="sr-only">Search items</label>
                         <input
+                            id="pending-search"
+                            name="search"
                             type="text"
                             placeholder="Search by name or bet number..."
                             value={searchTerm}
@@ -94,7 +100,10 @@ function Pending() {
 
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
                         <select
+                            id="franchise-filter"
+                            name="franchise"
                             value={filterFranchise}
                             onChange={(e) => setFilterFranchise(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
@@ -102,6 +111,23 @@ function Pending() {
                             <option value="">All Franchises</option>
                             {franchises.map(franchise => (
                                 <option key={franchise} value={franchise}>{franchise}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="collector-filter" className="sr-only">Filter by collector</label>
+                        <select
+                            id="collector-filter"
+                            name="collector"
+                            value={filterCollector}
+                            onChange={(e) => setFilterCollector(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
+                        >
+                            <option value="">All Collectors</option>
+                            {collectors.map(collector => (
+                                <option key={collector} value={collector}>{collector}</option>
                             ))}
                         </select>
                     </div>
@@ -114,20 +140,21 @@ function Pending() {
                     <table className="w-full">
                         <thead className="bg-gradient-to-r from-orange-50 to-red-50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Teller Name</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Agent Name</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Number</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Draw Date</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Return Date</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Days Overdue</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Win Amount</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Franchise</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="px-6 py-12 text-center">
+                                    <td colSpan="9" className="px-6 py-12 text-center">
                                         <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No pending items found</p>
                                     </td>
@@ -158,6 +185,7 @@ function Pending() {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{item.franchise_name || 'N/A'}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
                                             <td className="px-6 py-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${category.color}`}>
                                                     {category.label}

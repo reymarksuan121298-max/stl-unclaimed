@@ -109,6 +109,7 @@ export const dataHelpers = {
             .order('days_overdue', { ascending: false })
 
         if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
+        if (filters.collector) query = query.eq('collector', filters.collector)
 
         const { data, error } = await query
         if (error) throw error
