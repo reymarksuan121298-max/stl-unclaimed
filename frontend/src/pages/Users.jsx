@@ -222,9 +222,7 @@ function Users({ user }) {
                     <table className="w-full">
                         <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Username</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Password</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Fullname</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ContactNumber</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
@@ -236,7 +234,7 @@ function Users({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {filteredUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="9" className="px-6 py-12 text-center">
+                                    <td colSpan="7" className="px-6 py-12 text-center">
                                         <UsersIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No users found</p>
                                     </td>
@@ -244,12 +242,8 @@ function Users({ user }) {
                             ) : (
                                 filteredUsers.map((user) => (
                                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 text-sm text-gray-600">{user.id}</td>
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-gray-900">{user.username}</div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-500 font-mono">{user.password}</div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-gray-900">{user.fullname}</div>
