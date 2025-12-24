@@ -62,57 +62,59 @@ function Collections({ user }) {
             </div>
 
             {/* Filters */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <label htmlFor="collections-search" className="sr-only">Search items</label>
-                        <input
-                            id="collections-search"
-                            name="search"
-                            type="text"
-                            placeholder="Search by name or bet number..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
-                    </div>
+            {user?.role?.toLowerCase() !== 'collector' && (
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="collections-search" className="sr-only">Search items</label>
+                            <input
+                                id="collections-search"
+                                name="search"
+                                type="text"
+                                placeholder="Search by name or bet number..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                            />
+                        </div>
 
-                    <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
-                        <select
-                            id="franchise-filter"
-                            name="franchise"
-                            value={filterFranchise}
-                            onChange={(e) => setFilterFranchise(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white"
-                        >
-                            <option value="">All Franchises</option>
-                            {franchises.map(franchise => (
-                                <option key={franchise} value={franchise}>{franchise}</option>
-                            ))}
-                        </select>
-                    </div>
+                        <div className="relative">
+                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
+                            <select
+                                id="franchise-filter"
+                                name="franchise"
+                                value={filterFranchise}
+                                onChange={(e) => setFilterFranchise(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white"
+                            >
+                                <option value="">All Franchises</option>
+                                {franchises.map(franchise => (
+                                    <option key={franchise} value={franchise}>{franchise}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                    <div className="relative">
-                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <label htmlFor="collector-filter" className="sr-only">Filter by collector</label>
-                        <select
-                            id="collector-filter"
-                            name="collector"
-                            value={filterCollector}
-                            onChange={(e) => setFilterCollector(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white"
-                        >
-                            <option value="">All Collectors</option>
-                            {collectors.map(collector => (
-                                <option key={collector} value={collector}>{collector}</option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="collector-filter" className="sr-only">Filter by collector</label>
+                            <select
+                                id="collector-filter"
+                                name="collector"
+                                value={filterCollector}
+                                onChange={(e) => setFilterCollector(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white"
+                            >
+                                <option value="">All Collectors</option>
+                                {collectors.map(collector => (
+                                    <option key={collector} value={collector}>{collector}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
