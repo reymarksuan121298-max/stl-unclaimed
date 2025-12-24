@@ -61,6 +61,70 @@ export const dataHelpers = {
         return data
     },
 
+    markAsCollected: async (id, collectorName) => {
+        // 1. Get the current item data
+        const { data: item, error: fetchError } = await supabase
+            .from('Unclaimed')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (fetchError) throw fetchError
+
+        const returnDate = new Date().toISOString()
+
+        // 2. Update Unclaimed status
+        const { error: updateError } = await supabase
+            .from('Unclaimed')
+            .update({
+                status: 'Collected',
+                return_date: returnDate,
+                collector: collectorName || item.collector
+            })
+            .eq('id', id)
+
+        if (updateError) throw updateError
+
+        // 3. Insert into OverAllCollections
+        const { error: collError } = await supabase
+            .from('OverAllCollections')
+            .insert([{
+                unclaimed_id: id,
+                teller_name: item.teller_name,
+                bet_number: item.bet_number,
+                draw_date: item.draw_date,
+                return_date: returnDate,
+                amount: item.win_amount,
+                charge_amount: item.charge_amount || 0,
+                net: item.net || item.win_amount,
+                mode: item.mode || 'Cash',
+                payment_type: item.payment_type || 'Full Payment',
+                collector: collectorName || item.collector || 'System',
+                area: item.area,
+                franchise_name: item.franchise_name
+            }])
+
+        if (collError) throw collError
+
+        // 4. Insert into Reports (Optional but recommended based on schema)
+        const { error: reportError } = await supabase
+            .from('Reports')
+            .insert([{
+                teller_name: item.teller_name,
+                amount: item.win_amount,
+                collector: collectorName || item.collector || 'System',
+                area: item.area,
+                staff_amount: item.win_amount * 0.10,
+                collector_amount: item.win_amount * 0.10,
+                agent_amount: item.win_amount * 0.30,
+                admin_amount: item.win_amount * 0.50
+            }])
+
+        if (reportError) throw reportError
+
+        return { success: true }
+    },
+
     updateUnclaimed: async (id, updates) => {
         const { data, error } = await supabase
             .from('Unclaimed')

@@ -61,10 +61,7 @@ function Unclaimed({ user }) {
         if (!confirm('Mark this item as collected? This will also generate a report.')) return
         try {
             setLoading(true)
-            await dataHelpers.updateUnclaimed(id, {
-                status: 'Collected',
-                return_date: new Date().toISOString()
-            })
+            await dataHelpers.markAsCollected(id, user.fullname)
             loadUnclaimed()
             alert('Item marked as collected!')
         } catch (error) {

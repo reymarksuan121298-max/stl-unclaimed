@@ -57,6 +57,7 @@ const rolePermissions = {
         PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.VIEW_PENDING,
         PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.MARK_AS_COLLECTED,
     ],
     'checker': [
         PERMISSIONS.VIEW_DASHBOARD,
