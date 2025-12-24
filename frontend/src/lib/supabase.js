@@ -81,7 +81,9 @@ export const dataHelpers = {
             .update({
                 status: 'Collected',
                 return_date: returnDate,
-                collector: collectorName || item.collector || 'System'
+                // Prioritize the original assigned collector. 
+                // Only use the person marking it (collectorName) if it was empty.
+                collector: item.collector || collectorName || 'System'
             })
             .eq('id', id)
 
