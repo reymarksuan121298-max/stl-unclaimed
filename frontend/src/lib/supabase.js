@@ -62,7 +62,7 @@ export const dataHelpers = {
     },
 
     markAsCollected: async (id, collectorName) => {
-        // 1. Get the current item data
+        // 1. Get current item to ensure it exists and potentially get default collector
         const { data: item, error: fetchError } = await supabase
             .from('Unclaimed')
             .select('*')
@@ -74,53 +74,18 @@ export const dataHelpers = {
         const returnDate = new Date().toISOString()
 
         // 2. Update Unclaimed status
+        // This update will fire the database trigger 'on_unclaimed_collected'
+        // which automatically handles insertions into OverAllCollections and Reports.
         const { error: updateError } = await supabase
             .from('Unclaimed')
             .update({
                 status: 'Collected',
                 return_date: returnDate,
-                collector: collectorName || item.collector
+                collector: collectorName || item.collector || 'System'
             })
             .eq('id', id)
 
         if (updateError) throw updateError
-
-        // 3. Insert into OverAllCollections
-        const { error: collError } = await supabase
-            .from('OverAllCollections')
-            .insert([{
-                unclaimed_id: id,
-                teller_name: item.teller_name,
-                bet_number: item.bet_number,
-                draw_date: item.draw_date,
-                return_date: returnDate,
-                amount: item.win_amount,
-                charge_amount: item.charge_amount || 0,
-                net: item.net || item.win_amount,
-                mode: item.mode || 'Cash',
-                payment_type: item.payment_type || 'Full Payment',
-                collector: collectorName || item.collector || 'System',
-                area: item.area,
-                franchise_name: item.franchise_name
-            }])
-
-        if (collError) throw collError
-
-        // 4. Insert into Reports (Optional but recommended based on schema)
-        const { error: reportError } = await supabase
-            .from('Reports')
-            .insert([{
-                teller_name: item.teller_name,
-                amount: item.win_amount,
-                collector: collectorName || item.collector || 'System',
-                area: item.area,
-                staff_amount: item.win_amount * 0.10,
-                collector_amount: item.win_amount * 0.10,
-                agent_amount: item.win_amount * 0.30,
-                admin_amount: item.win_amount * 0.50
-            }])
-
-        if (reportError) throw reportError
 
         return { success: true }
     },
@@ -147,15 +112,26 @@ export const dataHelpers = {
     },
 
     deleteUnclaimed: async (id) => {
-        // First delete from OverAllCollections because it has a foreign key to Unclaimed
-        // This ensures the collection record is also removed as requested
+        // 1. Attempt to delete from OverAllCollections 
+        // We use silent fail (warning only) in case the column doesn't exist yet
         const { error: collError } = await supabase
             .from('OverAllCollections')
             .delete()
             .eq('unclaimed_id', id)
 
-        if (collError) throw collError
+        if (collError) console.warn('Could not delete from OverAllCollections (might be missing unclaimed_id):', collError.message)
 
+        // 2. Attempt to delete from Reports
+        // We use silent fail (warning only) in case the column doesn't exist yet
+        const { error: reportError } = await supabase
+            .from('Reports')
+            .delete()
+            .eq('unclaimed_id', id)
+
+        if (reportError) console.warn('Could not delete from Reports (might be missing unclaimed_id):', reportError.message)
+
+        // 3. Delete the main record from Unclaimed
+        // This is the critical operation
         const { error } = await supabase
             .from('Unclaimed')
             .delete()

@@ -314,7 +314,7 @@ function Users({ user }) {
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Username</label>
+                                    <label htmlFor="user-username" className="text-sm font-medium text-gray-700">Username</label>
                                     <input
                                         id="user-username"
                                         name="username"
@@ -326,7 +326,7 @@ function Users({ user }) {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Password</label>
+                                    <label htmlFor="user-password" className="text-sm font-medium text-gray-700">Password</label>
                                     <input
                                         id="user-password"
                                         name="password"
@@ -339,7 +339,7 @@ function Users({ user }) {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Full Name</label>
+                                    <label htmlFor="user-fullname" className="text-sm font-medium text-gray-700">Full Name</label>
                                     <input
                                         id="user-fullname"
                                         name="fullname"
@@ -351,7 +351,7 @@ function Users({ user }) {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Contact Number</label>
+                                    <label htmlFor="user-contact" className="text-sm font-medium text-gray-700">Contact Number</label>
                                     <input
                                         id="user-contact"
                                         name="contact_number"
@@ -362,7 +362,7 @@ function Users({ user }) {
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Role</label>
+                                    <label htmlFor="user-role" className="text-sm font-medium text-gray-700">Role</label>
                                     <select
                                         id="user-role"
                                         name="role"
@@ -376,7 +376,7 @@ function Users({ user }) {
                                     </select>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-sm font-medium text-gray-700">Franchise Name</label>
+                                    <label htmlFor="user-franchise" className="text-sm font-medium text-gray-700">Franchise Name</label>
                                     <select
                                         id="user-franchise"
                                         name="franchising_name"
@@ -391,7 +391,7 @@ function Users({ user }) {
                                     </select>
                                 </div>
                                 <div className="space-y-1 col-span-2">
-                                    <label className="text-sm font-medium text-gray-700">Status</label>
+                                    <label htmlFor="user-status" className="text-sm font-medium text-gray-700">Status</label>
                                     <select
                                         id="user-status"
                                         name="status"

@@ -235,9 +235,9 @@ function Unclaimed({ user }) {
 
                         <div className="relative">
                             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
+                            <label htmlFor="unclaimed-franchise-filter" className="sr-only">Filter by franchise</label>
                             <select
-                                id="franchise-filter"
+                                id="unclaimed-franchise-filter"
                                 name="franchise"
                                 value={filterFranchise}
                                 onChange={(e) => setFilterFranchise(e.target.value)}
@@ -252,9 +252,9 @@ function Unclaimed({ user }) {
 
                         <div className="relative">
                             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <label htmlFor="area-filter" className="sr-only">Filter by area</label>
+                            <label htmlFor="unclaimed-area-filter" className="sr-only">Filter by area</label>
                             <select
-                                id="area-filter"
+                                id="unclaimed-area-filter"
                                 name="area"
                                 value={filterArea}
                                 onChange={(e) => setFilterArea(e.target.value)}
@@ -531,7 +531,7 @@ function Unclaimed({ user }) {
                                         )}
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-semibold text-gray-700">Net Amount (Calculated)</label>
+                                        <span className="text-xs font-semibold text-gray-700">Net Amount (Calculated)</span>
                                         <div className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-semibold">
                                             ₱{((parseFloat(formData.win_amount || 0) - parseFloat(formData.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                         </div>

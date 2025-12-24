@@ -81,9 +81,9 @@ function Collections({ user }) {
 
                         <div className="relative">
                             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
+                            <label htmlFor="collections-franchise-filter" className="sr-only">Filter by franchise</label>
                             <select
-                                id="franchise-filter"
+                                id="collections-franchise-filter"
                                 name="franchise"
                                 value={filterFranchise}
                                 onChange={(e) => setFilterFranchise(e.target.value)}
@@ -98,9 +98,9 @@ function Collections({ user }) {
 
                         <div className="relative">
                             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <label htmlFor="collector-filter" className="sr-only">Filter by collector</label>
+                            <label htmlFor="collections-collector-filter" className="sr-only">Filter by collector</label>
                             <select
-                                id="collector-filter"
+                                id="collections-collector-filter"
                                 name="collector"
                                 value={filterCollector}
                                 onChange={(e) => setFilterCollector(e.target.value)}
