@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Users as UsersIcon, Search, Filter, Plus, Edit, Trash2, UserCheck, UserX, X } from 'lucide-react'
 import { dataHelpers, authHelpers } from '../lib/supabase'
 
-function Users() {
+function Users({ user }) {
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
@@ -187,7 +187,10 @@ function Users() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="users-search" className="sr-only">Search users</label>
                         <input
+                            id="users-search"
+                            name="search"
                             type="text"
                             placeholder="Search by name, username, or contact..."
                             value={searchTerm}
@@ -198,7 +201,10 @@ function Users() {
 
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="role-filter" className="sr-only">Filter by role</label>
                         <select
+                            id="role-filter"
+                            name="role"
                             value={filterRole}
                             onChange={(e) => setFilterRole(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
@@ -212,7 +218,10 @@ function Users() {
 
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="status-filter" className="sr-only">Filter by status</label>
                         <select
+                            id="status-filter"
+                            name="status"
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
