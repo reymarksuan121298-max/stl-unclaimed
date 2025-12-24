@@ -184,36 +184,6 @@ function Dashboard({ user }) {
                     </table>
                 </div>
             </div>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
-                    <Package className="w-8 h-8 mb-3" />
-                    <h3 className="text-lg font-semibold mb-2">Manage Unclaimed</h3>
-                    <p className="text-blue-100 text-sm mb-4">View and manage all unclaimed items</p>
-                    <a href="/unclaimed" className="inline-block px-4 py-2 bg-white text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
-                        Go to Unclaimed
-                    </a>
-                </div>
-
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg p-6 text-white">
-                    <Clock className="w-8 h-8 mb-3" />
-                    <h3 className="text-lg font-semibold mb-2">Check Pending</h3>
-                    <p className="text-orange-100 text-sm mb-4">Review overdue items</p>
-                    <a href="/pending" className="inline-block px-4 py-2 bg-white text-orange-600 rounded-lg font-semibold hover:bg-orange-50 transition-colors">
-                        View Pending
-                    </a>
-                </div>
-
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white">
-                    <DollarSign className="w-8 h-8 mb-3" />
-                    <h3 className="text-lg font-semibold mb-2">Collections</h3>
-                    <p className="text-green-100 text-sm mb-4">View all collected items</p>
-                    <a href="/collections" className="inline-block px-4 py-2 bg-white text-green-600 rounded-lg font-semibold hover:bg-green-50 transition-colors">
-                        View Collections
-                    </a>
-                </div>
-            </div>
         </div>
     )
 }
