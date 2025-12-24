@@ -329,82 +329,96 @@ function Users({ user }) {
             {/* User Modal */}
             {showUserModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="px-8 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
-                            <h2 className="text-2xl font-bold">{editingUser ? 'Edit User' : 'Add New User'}</h2>
-                            <button onClick={() => setShowUserModal(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                                <X className="w-6 h-6" />
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+                            <h2 className="text-xl font-bold">{editingUser ? 'Edit User' : 'Add New User'}</h2>
+                            <button onClick={() => setShowUserModal(false)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Username</label>
+                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">Username</label>
                                     <input
+                                        id="user-username"
+                                        name="username"
                                         required
                                         value={formData.username}
                                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         placeholder="Enter username"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Password</label>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">Password</label>
                                     <input
+                                        id="user-password"
+                                        name="password"
                                         required
                                         type="text"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         placeholder="Enter password"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Full Name</label>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">Full Name</label>
                                     <input
+                                        id="user-fullname"
+                                        name="fullname"
                                         required
                                         value={formData.fullname}
                                         onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         placeholder="Enter full name"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Contact Number</label>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">Contact Number</label>
                                     <input
+                                        id="user-contact"
+                                        name="contact_number"
                                         value={formData.contact_number}
                                         onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         placeholder="Enter contact number"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Role</label>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">Role</label>
                                     <select
+                                        id="user-role"
+                                        name="role"
                                         value={formData.role}
                                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                     >
                                         {roles.map(role => (
                                             <option key={role} value={role} className="capitalize">{role}</option>
                                         ))}
                                     </select>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Franchise Name</label>
+                                <div className="space-y-1">
+                                    <label className="text-sm font-medium text-gray-700">Franchise Name</label>
                                     <input
+                                        id="user-franchise"
+                                        name="franchising_name"
                                         value={formData.franchising_name}
                                         onChange={(e) => setFormData({ ...formData, franchising_name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         placeholder="Enter franchise name"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-gray-700">Status</label>
+                                <div className="space-y-1 col-span-2">
+                                    <label className="text-sm font-medium text-gray-700">Status</label>
                                     <select
+                                        id="user-status"
+                                        name="status"
                                         value={formData.status}
                                         onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                     >
                                         {statuses.map(status => (
                                             <option key={status} value={status} className="capitalize">{status}</option>
@@ -412,17 +426,17 @@ function Users({ user }) {
                                     </select>
                                 </div>
                             </div>
-                            <div className="pt-4 flex gap-4">
+                            <div className="pt-2 flex gap-3">
                                 <button
                                     type="button"
                                     onClick={() => setShowUserModal(false)}
-                                    className="flex-1 px-6 py-3 border border-gray-200 text-gray-600 font-semibold rounded-xl hover:bg-gray-50 transition-all font-medium"
+                                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all font-medium"
+                                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all text-sm"
                                 >
                                     {editingUser ? 'Update User' : 'Create User'}
                                 </button>
