@@ -19,8 +19,10 @@ function Layout({ children, user }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     const handleLogout = async () => {
-        await authHelpers.signOut()
-        navigate('/login')
+        if (confirm('Are you sure you want to logout?')) {
+            await authHelpers.signOut()
+            window.location.reload() // Reload to trigger app to show login screen
+        }
     }
 
     const navigation = [
@@ -80,8 +82,8 @@ function Layout({ children, user }) {
                                     key={item.name}
                                     to={item.href}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
-                                            ? 'bg-white text-indigo-600 shadow-lg'
-                                            : 'text-white hover:bg-white/10'
+                                        ? 'bg-white text-indigo-600 shadow-lg'
+                                        : 'text-white hover:bg-white/10'
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />
@@ -136,8 +138,8 @@ function Layout({ children, user }) {
                                         to={item.href}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className={`flex items-center gap-3 px-4 py-3 ${active
-                                                ? 'bg-indigo-50 text-indigo-600 border-l-4 border-indigo-600'
-                                                : 'text-gray-700 hover:bg-gray-50'
+                                            ? 'bg-indigo-50 text-indigo-600 border-l-4 border-indigo-600'
+                                            : 'text-gray-700 hover:bg-gray-50'
                                             }`}
                                     >
                                         <Icon className="w-5 h-5" />
