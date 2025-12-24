@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { FileText, Search, Filter, PieChart } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 
-function Reports() {
+function Reports({ user }) {
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
@@ -63,7 +63,10 @@ function Reports() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="reports-search" className="sr-only">Search reports</label>
                         <input
+                            id="reports-search"
+                            name="search"
                             type="text"
                             placeholder="Search by name or collector..."
                             value={searchTerm}
@@ -74,7 +77,10 @@ function Reports() {
 
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="collector-filter" className="sr-only">Filter by collector</label>
                         <select
+                            id="collector-filter"
+                            name="collector"
                             value={filterCollector}
                             onChange={(e) => setFilterCollector(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none bg-white"
@@ -94,7 +100,7 @@ function Reports() {
                     <table className="w-full">
                         <thead className="bg-gradient-to-r from-purple-50 to-pink-50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Teller Name</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Agent Name</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Area</th>
