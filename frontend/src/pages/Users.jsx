@@ -140,6 +140,7 @@ function Users({ user }) {
     )
 
     const roles = ['admin', 'checker', 'general manager', 'specialist', 'collector', 'staff']
+    const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
     const statuses = ['active', 'inactive', 'suspended']
 
     if (loading) {
@@ -402,14 +403,18 @@ function Users({ user }) {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-sm font-medium text-gray-700">Franchise Name</label>
-                                    <input
+                                    <select
                                         id="user-franchise"
                                         name="franchising_name"
                                         value={formData.franchising_name}
                                         onChange={(e) => setFormData({ ...formData, franchising_name: e.target.value })}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
-                                        placeholder="Enter franchise name"
-                                    />
+                                    >
+                                        <option value="">Select Franchise</option>
+                                        {franchises.map(franchise => (
+                                            <option key={franchise} value={franchise}>{franchise}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-1 col-span-2">
                                     <label className="text-sm font-medium text-gray-700">Status</label>
