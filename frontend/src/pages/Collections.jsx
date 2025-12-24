@@ -2,21 +2,23 @@ import { useEffect, useState } from 'react'
 import { DollarSign, Search, Filter, TrendingUp } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 
-function Collections() {
+function Collections({ user }) {
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterFranchise, setFilterFranchise] = useState('')
+    const [filterCollector, setFilterCollector] = useState('')
 
     useEffect(() => {
         loadCollections()
-    }, [filterFranchise])
+    }, [filterFranchise, filterCollector])
 
     const loadCollections = async () => {
         try {
             setLoading(true)
             const filters = {}
             if (filterFranchise) filters.franchise_name = filterFranchise
+            if (filterCollector) filters.collector = filterCollector
 
             const data = await dataHelpers.getCollections(filters)
             setItems(data)
@@ -35,6 +37,7 @@ function Collections() {
     )
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
+    const collectors = [...new Set(items.map(i => i.collector).filter(Boolean))].sort()
 
     if (loading) {
         return (
@@ -60,12 +63,15 @@ function Collections() {
 
             {/* Filters */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="collections-search" className="sr-only">Search items</label>
                         <input
+                            id="collections-search"
+                            name="search"
                             type="text"
-                            placeholder="Search by name, bet number, or collector..."
+                            placeholder="Search by name or bet number..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -74,7 +80,10 @@ function Collections() {
 
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="franchise-filter" className="sr-only">Filter by franchise</label>
                         <select
+                            id="franchise-filter"
+                            name="franchise"
                             value={filterFranchise}
                             onChange={(e) => setFilterFranchise(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white"
@@ -85,30 +94,50 @@ function Collections() {
                             ))}
                         </select>
                     </div>
+
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="collector-filter" className="sr-only">Filter by collector</label>
+                        <select
+                            id="collector-filter"
+                            name="collector"
+                            value={filterCollector}
+                            onChange={(e) => setFilterCollector(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white"
+                        >
+                            <option value="">All Collectors</option>
+                            {collectors.map(collector => (
+                                <option key={collector} value={collector}>{collector}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
             {/* Table */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full text-sm">
                         <thead className="bg-gradient-to-r from-green-50 to-emerald-50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Teller Name</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Number</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Draw Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Return Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Amount</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Charge</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Net</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Franchise</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Agent Name</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Number</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Draw Date</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Return Timestamp</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Amount</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Charge</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Net</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Mode</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Payment</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Collector</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Area</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Franchise</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="9" className="px-6 py-12 text-center">
+                                    <td colSpan="12" className="px-6 py-12 text-center">
                                         <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No collections found</p>
                                     </td>
@@ -116,33 +145,43 @@ function Collections() {
                             ) : (
                                 filteredItems.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{item.teller_name}</div>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.bet_number || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                                             {new Date(item.draw_date).toLocaleDateString()}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">
-                                            {item.return_date ? new Date(item.return_date).toLocaleDateString() : 'N/A'}
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                                            {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-semibold text-blue-600">
-                                                ₱{parseFloat(item.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className="font-semibold text-blue-600 text-xs">
+                                                ₱{parseFloat(item.amount || item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="text-sm text-red-600">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className="text-xs text-red-600">
                                                 ₱{parseFloat(item.charge_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="font-bold text-green-600">
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className="font-bold text-green-600 text-xs">
                                                 ₱{parseFloat(item.net || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{item.franchise_name || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.mode || 'N/A'}</td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.payment_type === 'Full Payment'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-orange-100 text-orange-800'
+                                                }`}>
+                                                {item.payment_type === 'Full Payment' ? 'Full' : item.payment_type === 'Partial Payment' ? 'Partial' : 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.collector || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.franchise_name || 'N/A'}</td>
                                     </tr>
                                 ))
                             )}
@@ -160,7 +199,7 @@ function Collections() {
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
                     <p className="text-purple-100 text-sm mb-1">Total Amount</p>
                     <p className="text-2xl font-bold">
-                        ₱{filteredItems.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                        ₱{filteredItems.reduce((sum, item) => sum + parseFloat(item.amount || item.win_amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </p>
                 </div>
                 <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white">
