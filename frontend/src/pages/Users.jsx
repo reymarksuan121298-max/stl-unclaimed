@@ -117,21 +117,7 @@ function Users({ user }) {
         }
     }
 
-    const handleDeleteAll = async () => {
-        if (!confirm('CRITICAL WARNING: This will delete ALL users from the database. You will be logged out and unable to log back in until users are recreated. Are you absolutely sure?')) return
 
-        try {
-            setLoading(true)
-            await dataHelpers.deleteAllUsers()
-            // Clear session since the user is gone
-            authHelpers.signOut()
-            window.location.reload()
-        } catch (error) {
-            console.error('Error deleting all users:', error)
-            alert('Error deleting all users: ' + error.message)
-            setLoading(false)
-        }
-    }
 
     const filteredUsers = users.filter(user =>
         user.fullname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -166,13 +152,7 @@ function Users({ user }) {
                     <p className="text-gray-600 mt-1">Manage system users and permissions</p>
                 </div>
                 <div className="flex gap-4">
-                    <button
-                        onClick={handleDeleteAll}
-                        className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 transition-all duration-200"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                        Delete All Users
-                    </button>
+
                     <button
                         onClick={() => handleOpenModal()}
                         className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
