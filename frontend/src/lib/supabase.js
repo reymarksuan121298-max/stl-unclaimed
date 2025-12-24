@@ -54,6 +54,7 @@ export const dataHelpers = {
         if (filters.status) query = query.eq('status', filters.status)
         if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
         if (filters.area) query = query.eq('area', filters.area)
+        if (filters.collector) query = query.eq('collector', filters.collector)
 
         const { data, error } = await query
         if (error) throw error
@@ -82,6 +83,15 @@ export const dataHelpers = {
     },
 
     deleteUnclaimed: async (id) => {
+        // First delete from OverAllCollections because it has a foreign key to Unclaimed
+        // This ensures the collection record is also removed as requested
+        const { error: collError } = await supabase
+            .from('OverAllCollections')
+            .delete()
+            .eq('unclaimed_id', id)
+
+        if (collError) throw collError
+
         const { error } = await supabase
             .from('Unclaimed')
             .delete()
