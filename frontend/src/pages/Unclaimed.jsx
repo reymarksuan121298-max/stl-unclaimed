@@ -515,7 +515,7 @@ function Unclaimed({ user }) {
                                                 {isCollectorEditMode && (
                                                     <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
                                                         <p className="text-sm text-blue-800">
-                                                            <strong>Collector Mode:</strong> You can only update the transaction receipt image. All other fields are read-only.
+                                                            <strong>Collector Mode:</strong> You can only update the charge amount and transaction receipt image. All other fields are read-only.
                                                         </p>
                                                     </div>
                                                 )}
@@ -597,8 +597,8 @@ function Unclaimed({ user }) {
                                                         step="0.01"
                                                         value={formData.charge_amount}
                                                         onChange={(e) => setFormData({ ...formData, charge_amount: e.target.value })}
-                                                        disabled={formData.mode === 'Cash' || isCollectorEditMode}
-                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${formData.mode === 'Cash' || isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        disabled={formData.mode === 'Cash'}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${formData.mode === 'Cash' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                         placeholder="0.00"
                                                     />
                                                     {formData.mode === 'Cash' && (
