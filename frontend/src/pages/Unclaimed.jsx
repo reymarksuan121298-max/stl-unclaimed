@@ -505,255 +505,282 @@ function Unclaimed({ user }) {
                                 </button>
                             </div>
                             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-agent" className="text-xs font-semibold text-gray-700">Agent Name</label>
-                                        <input
-                                            id="modal-agent"
-                                            name="teller_name"
-                                            required
-                                            value={formData.teller_name}
-                                            onChange={(e) => setFormData({ ...formData, teller_name: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                            placeholder="Enter agent name"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-bet" className="text-xs font-semibold text-gray-700">Bet Number</label>
-                                        <input
-                                            id="modal-bet"
-                                            name="bet_number"
-                                            required
-                                            value={formData.bet_number}
-                                            onChange={(e) => setFormData({ ...formData, bet_number: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                            placeholder="BET-000"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-draw-date" className="text-xs font-semibold text-gray-700">Draw Date</label>
-                                        <input
-                                            id="modal-draw-date"
-                                            name="draw_date"
-                                            type="date"
-                                            required
-                                            value={formData.draw_date}
-                                            onChange={(e) => setFormData({ ...formData, draw_date: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-bet-amount" className="text-xs font-semibold text-gray-700">Bet Amount</label>
-                                        <input
-                                            id="modal-bet-amount"
-                                            name="bet_amount"
-                                            type="number"
-                                            step="0.01"
-                                            required
-                                            value={formData.bet_amount}
-                                            onChange={(e) => setFormData({ ...formData, bet_amount: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-win-amount" className="text-xs font-semibold text-gray-700">Win Amount</label>
-                                        <input
-                                            id="modal-win-amount"
-                                            name="win_amount"
-                                            type="number"
-                                            step="0.01"
-                                            required
-                                            value={formData.win_amount}
-                                            onChange={(e) => setFormData({ ...formData, win_amount: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                            placeholder="0.00"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-charge-amount" className="text-xs font-semibold text-gray-700">Charge Amount</label>
-                                        <input
-                                            id="modal-charge-amount"
-                                            name="charge_amount"
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.charge_amount}
-                                            onChange={(e) => setFormData({ ...formData, charge_amount: e.target.value })}
-                                            disabled={formData.mode === 'Cash'}
-                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${formData.mode === 'Cash' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
-                                            placeholder="0.00"
-                                        />
-                                        {formData.mode === 'Cash' && (
-                                            <p className="text-xs text-gray-500">No charge for Cash mode</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-xs font-semibold text-gray-700">Net Amount (Calculated)</span>
-                                        <div className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-semibold">
-                                            ₱{((parseFloat(formData.win_amount || 0) - parseFloat(formData.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                        </div>
-                                        <p className="text-xs text-gray-500">Win Amount - Charge Amount</p>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-mode" className="text-xs font-semibold text-gray-700">Mode</label>
-                                        <select
-                                            id="modal-mode"
-                                            name="mode"
-                                            value={formData.mode}
-                                            onChange={(e) => {
-                                                const newMode = e.target.value;
-                                                setFormData({
-                                                    ...formData,
-                                                    mode: newMode,
-                                                    charge_amount: newMode === 'Cash' ? '0' : formData.charge_amount
-                                                });
-                                            }}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        >
-                                            <option value="Cash">Cash</option>
-                                            <option value="Back Transfer">Back Transfer</option>
-                                            <option value="Cebuana">Cebuana</option>
-                                            <option value="Gcash">Gcash</option>
-                                            <option value="Palawan">Palawan</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-payment-type" className="text-xs font-semibold text-gray-700">Payment Type</label>
-                                        <select
-                                            id="modal-payment-type"
-                                            name="payment_type"
-                                            value={formData.payment_type}
-                                            onChange={(e) => setFormData({ ...formData, payment_type: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        >
-                                            <option value="Full Payment">Full Payment</option>
-                                            <option value="Partial Payment">Partial Payment</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-status" className="text-xs font-semibold text-gray-700">Status</label>
-                                        <select
-                                            id="modal-status"
-                                            name="status"
-                                            value={formData.status}
-                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        >
-                                            <option value="Unclaimed">Unclaimed</option>
-                                            <option value="Collected">Collected</option>
-                                            <option value="Cancelled">Cancelled</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-franchise" className="text-xs font-semibold text-gray-700">Franchise</label>
-                                        <select
-                                            id="modal-franchise"
-                                            name="franchise_name"
-                                            required
-                                            value={formData.franchise_name}
-                                            onChange={(e) => setFormData({ ...formData, franchise_name: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        >
-                                            {franchises.map(f => <option key={f} value={f}>{f}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-area" className="text-xs font-semibold text-gray-700">Area</label>
-                                        <select
-                                            id="modal-area"
-                                            name="area"
-                                            value={formData.area}
-                                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        >
-                                            <option value="">Select Area</option>
-                                            {areas.map(area => <option key={area} value={area}>{area}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>
-                                        <input
-                                            id="modal-collector"
-                                            name="collector"
-                                            type="text"
-                                            value={formData.collector}
-                                            onChange={(e) => setFormData({ ...formData, collector: e.target.value })}
-                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${user?.role?.toLowerCase() === 'collector' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
-                                            placeholder="Enter collector name"
-                                            readOnly={user?.role?.toLowerCase() === 'collector'}
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="modal-return-date" className="text-xs font-semibold text-gray-700">Return Date & Time</label>
-                                        <input
-                                            id="modal-return-date"
-                                            name="return_date"
-                                            type="datetime-local"
-                                            value={formData.return_date}
-                                            onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
-                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                                        />
-                                    </div>
-                                    {/* Receipt Image Upload - Only show if mode is not Cash */}
-                                    {formData.mode !== 'Cash' && (
-                                        <div className="space-y-1 md:col-span-2">
-                                            <label htmlFor="modal-receipt" className="text-xs font-semibold text-gray-700">
-                                                Transaction Receipt Image {formData.mode === 'Back Transfer' || formData.mode === 'Deposited' ? '(Required)' : '(Optional)'}
-                                            </label>
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2">
-                                                    <label
-                                                        htmlFor="modal-receipt"
-                                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-indigo-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all"
-                                                    >
-                                                        <Upload className="w-5 h-5 text-indigo-600" />
-                                                        <span className="text-indigo-700 font-medium">
-                                                            {formData.receipt_file ? formData.receipt_file.name : 'Choose receipt image'}
-                                                        </span>
-                                                    </label>
-                                                    <input
-                                                        id="modal-receipt"
-                                                        name="receipt_image"
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0]
-                                                            if (file) {
-                                                                setFormData({ ...formData, receipt_file: file })
-                                                            }
-                                                        }}
-                                                        className="hidden"
-                                                    />
-                                                </div>
-                                                {formData.receipt_image && !formData.receipt_file && (
-                                                    <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                                                        <ImageIcon className="w-4 h-4 text-green-600" />
-                                                        <span className="text-xs text-green-700">Current receipt image uploaded</span>
-                                                        <a
-                                                            href={formData.receipt_image}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="ml-auto text-xs text-indigo-600 hover:text-indigo-800 underline"
-                                                        >
-                                                            View
-                                                        </a>
+                                {(() => {
+                                    // Helper variable: Disable all fields except receipt upload for collectors in edit mode
+                                    const isCollectorEditMode = user?.role?.toLowerCase() === 'collector' && editingItem;
+
+                                    return (
+                                        <>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {isCollectorEditMode && (
+                                                    <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+                                                        <p className="text-sm text-blue-800">
+                                                            <strong>Collector Mode:</strong> You can only update the transaction receipt image. All other fields are read-only.
+                                                        </p>
                                                     </div>
                                                 )}
-                                                <p className="text-xs text-gray-500">
-                                                    Upload a photo of the transaction receipt for {formData.mode} transactions
-                                                </p>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-agent" className="text-xs font-semibold text-gray-700">Agent Name</label>
+                                                    <input
+                                                        id="modal-agent"
+                                                        name="teller_name"
+                                                        required
+                                                        value={formData.teller_name}
+                                                        onChange={(e) => setFormData({ ...formData, teller_name: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        placeholder="Enter agent name"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-bet" className="text-xs font-semibold text-gray-700">Bet Number</label>
+                                                    <input
+                                                        id="modal-bet"
+                                                        name="bet_number"
+                                                        required
+                                                        value={formData.bet_number}
+                                                        onChange={(e) => setFormData({ ...formData, bet_number: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        placeholder="BET-000"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-draw-date" className="text-xs font-semibold text-gray-700">Draw Date</label>
+                                                    <input
+                                                        id="modal-draw-date"
+                                                        name="draw_date"
+                                                        type="date"
+                                                        required
+                                                        value={formData.draw_date}
+                                                        onChange={(e) => setFormData({ ...formData, draw_date: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-bet-amount" className="text-xs font-semibold text-gray-700">Bet Amount</label>
+                                                    <input
+                                                        id="modal-bet-amount"
+                                                        name="bet_amount"
+                                                        type="number"
+                                                        step="0.01"
+                                                        required
+                                                        value={formData.bet_amount}
+                                                        onChange={(e) => setFormData({ ...formData, bet_amount: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-win-amount" className="text-xs font-semibold text-gray-700">Win Amount</label>
+                                                    <input
+                                                        id="modal-win-amount"
+                                                        name="win_amount"
+                                                        type="number"
+                                                        step="0.01"
+                                                        required
+                                                        value={formData.win_amount}
+                                                        onChange={(e) => setFormData({ ...formData, win_amount: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-charge-amount" className="text-xs font-semibold text-gray-700">Charge Amount</label>
+                                                    <input
+                                                        id="modal-charge-amount"
+                                                        name="charge_amount"
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={formData.charge_amount}
+                                                        onChange={(e) => setFormData({ ...formData, charge_amount: e.target.value })}
+                                                        disabled={formData.mode === 'Cash' || isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${formData.mode === 'Cash' || isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        placeholder="0.00"
+                                                    />
+                                                    {formData.mode === 'Cash' && (
+                                                        <p className="text-xs text-gray-500">No charge for Cash mode</p>
+                                                    )}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <span className="text-xs font-semibold text-gray-700">Net Amount (Calculated)</span>
+                                                    <div className="w-full px-3 py-2 text-sm bg-gray-100 border border-gray-200 rounded-lg text-gray-700 font-semibold">
+                                                        ₱{((parseFloat(formData.win_amount || 0) - parseFloat(formData.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                    </div>
+                                                    <p className="text-xs text-gray-500">Win Amount - Charge Amount</p>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-mode" className="text-xs font-semibold text-gray-700">Mode</label>
+                                                    <select
+                                                        id="modal-mode"
+                                                        name="mode"
+                                                        value={formData.mode}
+                                                        onChange={(e) => {
+                                                            const newMode = e.target.value;
+                                                            setFormData({
+                                                                ...formData,
+                                                                mode: newMode,
+                                                                charge_amount: newMode === 'Cash' ? '0' : formData.charge_amount
+                                                            });
+                                                        }}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        <option value="Cash">Cash</option>
+                                                        <option value="Back Transfer">Back Transfer</option>
+                                                        <option value="Cebuana">Cebuana</option>
+                                                        <option value="Gcash">Gcash</option>
+                                                        <option value="Palawan">Palawan</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-payment-type" className="text-xs font-semibold text-gray-700">Payment Type</label>
+                                                    <select
+                                                        id="modal-payment-type"
+                                                        name="payment_type"
+                                                        value={formData.payment_type}
+                                                        onChange={(e) => setFormData({ ...formData, payment_type: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        <option value="Full Payment">Full Payment</option>
+                                                        <option value="Partial Payment">Partial Payment</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-status" className="text-xs font-semibold text-gray-700">Status</label>
+                                                    <select
+                                                        id="modal-status"
+                                                        name="status"
+                                                        value={formData.status}
+                                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        <option value="Unclaimed">Unclaimed</option>
+                                                        <option value="Collected">Collected</option>
+                                                        <option value="Cancelled">Cancelled</option>
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-franchise" className="text-xs font-semibold text-gray-700">Franchise</label>
+                                                    <select
+                                                        id="modal-franchise"
+                                                        name="franchise_name"
+                                                        required
+                                                        value={formData.franchise_name}
+                                                        onChange={(e) => setFormData({ ...formData, franchise_name: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        {franchises.map(f => <option key={f} value={f}>{f}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-area" className="text-xs font-semibold text-gray-700">Area</label>
+                                                    <select
+                                                        id="modal-area"
+                                                        name="area"
+                                                        value={formData.area}
+                                                        onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        <option value="">Select Area</option>
+                                                        {areas.map(area => <option key={area} value={area}>{area}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>
+                                                    <input
+                                                        id="modal-collector"
+                                                        name="collector"
+                                                        type="text"
+                                                        value={formData.collector}
+                                                        onChange={(e) => setFormData({ ...formData, collector: e.target.value })}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${user?.role?.toLowerCase() === 'collector' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        placeholder="Enter collector name"
+                                                        readOnly={user?.role?.toLowerCase() === 'collector'}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label htmlFor="modal-return-date" className="text-xs font-semibold text-gray-700">Return Date & Time</label>
+                                                    <input
+                                                        id="modal-return-date"
+                                                        name="return_date"
+                                                        type="datetime-local"
+                                                        value={formData.return_date}
+                                                        onChange={(e) => setFormData({ ...formData, return_date: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    />
+                                                </div>
+                                                {/* Receipt Image Upload - Only show if mode is not Cash */}
+                                                {formData.mode !== 'Cash' && (
+                                                    <div className="space-y-1 md:col-span-2">
+                                                        <label htmlFor="modal-receipt" className="text-xs font-semibold text-gray-700">
+                                                            Transaction Receipt Image {formData.mode === 'Back Transfer' || formData.mode === 'Deposited' ? '(Required)' : '(Optional)'}
+                                                        </label>
+                                                        <div className="space-y-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <label
+                                                                    htmlFor="modal-receipt"
+                                                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-indigo-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all"
+                                                                >
+                                                                    <Upload className="w-5 h-5 text-indigo-600" />
+                                                                    <span className="text-indigo-700 font-medium">
+                                                                        {formData.receipt_file ? formData.receipt_file.name : 'Choose receipt image'}
+                                                                    </span>
+                                                                </label>
+                                                                <input
+                                                                    id="modal-receipt"
+                                                                    name="receipt_image"
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    onChange={(e) => {
+                                                                        const file = e.target.files?.[0]
+                                                                        if (file) {
+                                                                            setFormData({ ...formData, receipt_file: file })
+                                                                        }
+                                                                    }}
+                                                                    className="hidden"
+                                                                />
+                                                            </div>
+                                                            {formData.receipt_image && !formData.receipt_file && (
+                                                                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                                                    <ImageIcon className="w-4 h-4 text-green-600" />
+                                                                    <span className="text-xs text-green-700">Current receipt image uploaded</span>
+                                                                    <a
+                                                                        href={formData.receipt_image}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="ml-auto text-xs text-indigo-600 hover:text-indigo-800 underline"
+                                                                    >
+                                                                        View
+                                                                    </a>
+                                                                </div>
+                                                            )}
+                                                            <p className="text-xs text-gray-500">
+                                                                Upload a photo of the transaction receipt for {formData.mode} transactions
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="pt-3 flex gap-3">
-                                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-all">
-                                        Cancel
-                                    </button>
-                                    <button type="submit" className="flex-1 px-4 py-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
-                                        {editingItem ? 'Update Record' : 'Save Record'}
-                                    </button>
-                                </div>
+                                            <div className="pt-3 flex gap-3">
+                                                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-all">
+                                                    Cancel
+                                                </button>
+                                                <button type="submit" className="flex-1 px-4 py-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                                    {editingItem ? 'Update Record' : 'Save Record'}
+                                                </button>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </form>
                         </div>
                     </div>
