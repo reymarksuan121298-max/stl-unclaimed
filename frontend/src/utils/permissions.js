@@ -57,6 +57,7 @@ const rolePermissions = {
         PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.VIEW_PENDING,
         PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.UPDATE_UNCLAIMED, // Allow collectors to edit their own items (receipt upload only)
     ],
     'checker': [
         PERMISSIONS.VIEW_DASHBOARD,
