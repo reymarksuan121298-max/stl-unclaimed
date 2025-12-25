@@ -271,24 +271,6 @@ function Collections({ user }) {
                                 }}
                             />
                         </div>
-
-                        {/* Footer */}
-                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-                            <a
-                                href={receiptImageUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-green-600 hover:text-green-800 font-medium underline"
-                            >
-                                Open in new tab
-                            </a>
-                            <button
-                                onClick={() => setShowReceiptModal(false)}
-                                className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors"
-                            >
-                                Close
-                            </button>
-                        </div>
                     </div>
                 </div>
             )}
