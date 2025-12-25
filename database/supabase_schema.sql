@@ -93,7 +93,9 @@ CREATE TABLE IF NOT EXISTS "Reports" (
 
 -- 5. Pending View
 -- A dynamic view for items overdue by more than 3 days
-CREATE OR REPLACE VIEW "Pending" AS
+DROP VIEW IF EXISTS "Pending";
+
+CREATE VIEW "Pending" AS
 SELECT 
     id,
     teller_name,
@@ -102,6 +104,8 @@ SELECT
     return_date,
     win_amount,
     franchise_name,
+    collector,
+    area,
     EXTRACT(DAY FROM (NOW() - draw_date::timestamp))::integer AS days_overdue
 FROM "Unclaimed"
 WHERE status = 'Unclaimed'

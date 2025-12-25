@@ -185,6 +185,7 @@ function Collections({ user }) {
                                                 {item.receipt_image && (
                                                     <button
                                                         onClick={() => {
+                                                            console.log('Opening receipt modal for item:', item.id, 'URL:', item.receipt_image)
                                                             setReceiptImageUrl(item.receipt_image)
                                                             setShowReceiptModal(true)
                                                         }}
@@ -265,15 +266,24 @@ function Collections({ user }) {
                         </div>
 
                         {/* Image */}
-                        <div className="p-6 flex items-center justify-center bg-gray-50">
-                            <img
-                                src={receiptImageUrl}
-                                alt="Transaction Receipt"
-                                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
-                                onError={(e) => {
-                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
-                                }}
-                            />
+                        <div className="p-6 flex items-center justify-center bg-gray-50 min-h-[400px]">
+                            {receiptImageUrl ? (
+                                <img
+                                    src={receiptImageUrl}
+                                    alt="Transaction Receipt"
+                                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                                    onError={(e) => {
+                                        console.error('Failed to load receipt image:', receiptImageUrl)
+                                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
+                                    }}
+                                    onLoad={() => console.log('Receipt image loaded successfully:', receiptImageUrl)}
+                                />
+                            ) : (
+                                <div className="text-center">
+                                    <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                    <p className="text-gray-500">No receipt image available</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

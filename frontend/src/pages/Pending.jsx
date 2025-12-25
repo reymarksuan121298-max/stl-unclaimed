@@ -11,7 +11,7 @@ function Pending({ user }) {
 
     useEffect(() => {
         loadPending()
-    }, [filterFranchise, filterCollector])
+    }, [filterFranchise, filterCollector, user])
 
     const loadPending = async () => {
         try {
@@ -20,11 +20,17 @@ function Pending({ user }) {
             if (filterFranchise) filters.franchise_name = filterFranchise
             if (filterCollector) filters.collector = filterCollector
 
+            // Auto-filter by collector's fullname if user is a collector
+            if (user?.role?.toLowerCase() === 'collector' && user?.fullname) {
+                filters.collector = user.fullname
+            }
+
             const data = await dataHelpers.getPending(filters)
             setItems(data)
         } catch (error) {
             console.error('Error loading pending:', error)
-            alert('Error loading pending items')
+            console.error('Error details:', error.message, error)
+            alert('Error loading pending items: ' + (error.message || 'Unknown error'))
         } finally {
             setLoading(false)
         }
