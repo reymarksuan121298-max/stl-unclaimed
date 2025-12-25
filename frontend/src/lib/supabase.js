@@ -143,6 +143,49 @@ export const dataHelpers = {
         return { success: true }
     },
 
+    uploadReceiptImage: async (file) => {
+        if (!file) return null
+
+        try {
+            // Create a unique filename
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+            const filePath = `receipts/${fileName}`
+
+            // Upload to Supabase Storage
+            const { data, error } = await supabase.storage
+                .from('unclaimed-receipts')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
+
+            if (error) {
+                // Provide helpful error message if bucket doesn't exist
+                if (error.message.includes('Bucket not found')) {
+                    throw new Error(
+                        'Storage bucket "unclaimed-receipts" not found. Please create it in Supabase Dashboard:\n' +
+                        '1. Go to Storage → New bucket\n' +
+                        '2. Name: unclaimed-receipts\n' +
+                        '3. Make it Public\n' +
+                        '4. Click Create'
+                    )
+                }
+                throw error
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('unclaimed-receipts')
+                .getPublicUrl(filePath)
+
+            return publicUrl
+        } catch (error) {
+            console.error('Upload error:', error)
+            throw error
+        }
+    },
+
     // Pending operations
     getPending: async (filters = {}) => {
         let query = supabase

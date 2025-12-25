@@ -1,5 +1,13 @@
 -- STL Unclaimed System Database Schema
--- Last Updated: 2025-12-23
+-- Last Updated: 2025-12-25
+-- 
+-- Recent Changes:
+-- - Added receipt_image column to Unclaimed and OverAllCollections tables
+-- - Added mode column (Cash, Back Transfer, Deposited, Gcash, Cebuana, Palawan)
+-- - Added payment_type column (Full Payment, Partial Payment)
+-- - Added charge_amount column to Unclaimed table
+-- - Updated trigger to copy receipt_image, mode, and payment_type to collections
+-- - Fixed charge_amount calculation in trigger (now uses actual charge_amount field)
 
 -- Enable necessary extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -29,11 +37,15 @@ CREATE TABLE IF NOT EXISTS "Unclaimed" (
     draw_date DATE NOT NULL,
     win_amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
     net NUMERIC(15, 2) NOT NULL DEFAULT 0,
+    charge_amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
     franchise_name TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'Unclaimed', -- Unclaimed, Collected, Cancelled
     return_date TIMESTAMPTZ,
     area TEXT,
     collector TEXT,
+    mode TEXT DEFAULT 'Cash', -- Cash, Back Transfer, Deposited, Gcash, Cebuana, Palawan
+    payment_type TEXT DEFAULT 'Full Payment', -- Full Payment, Partial Payment
+    receipt_image TEXT, -- URL to transaction receipt image in Supabase Storage
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -52,6 +64,9 @@ CREATE TABLE IF NOT EXISTS "OverAllCollections" (
     net NUMERIC(15, 2) NOT NULL DEFAULT 0,
     collector TEXT,
     franchise_name TEXT NOT NULL,
+    mode TEXT, -- Cash, Back Transfer, Deposited, Gcash, Cebuana, Palawan
+    payment_type TEXT, -- Full Payment, Partial Payment
+    receipt_image TEXT, -- URL to transaction receipt image copied from Unclaimed
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -92,18 +107,21 @@ AND (NOW() - draw_date::timestamp) > INTERVAL '3 days';
 CREATE OR REPLACE FUNCTION handle_unclaimed_collection()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (OLD.status = 'Unclaimed' AND NEW.status = 'Collected') THEN
+    IF (OLD.status IS DISTINCT FROM 'Collected' AND NEW.status = 'Collected') THEN
         -- Insert into OverAllCollections
         INSERT INTO "OverAllCollections" (
             unclaimed_id, teller_name, bet_number, draw_date, 
             return_date, amount, charge_amount, net, 
-            collector, franchise_name
+            collector, franchise_name, receipt_image, mode, payment_type
         ) VALUES (
             NEW.id, NEW.teller_name, NEW.bet_number, NEW.draw_date,
             COALESCE(NEW.return_date, NOW()), NEW.win_amount, 
-            NEW.win_amount - NEW.net, NEW.net,
+            COALESCE(NEW.charge_amount, 0), NEW.net,
             COALESCE(NEW.collector, 'System'),
-            NEW.franchise_name
+            NEW.franchise_name,
+            NEW.receipt_image,
+            COALESCE(NEW.mode, 'Cash'),
+            COALESCE(NEW.payment_type, 'Full Payment')
         );
 
         -- Insert into Reports

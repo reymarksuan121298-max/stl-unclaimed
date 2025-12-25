@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Package, Search, Plus, Trash2, Check, Filter, X, Edit } from 'lucide-react'
+import { Package, Search, Plus, Trash2, Check, Filter, X, Edit, Upload, Image as ImageIcon } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 import { hasPermission, PERMISSIONS, canPerformAction } from '../utils/permissions'
 
@@ -10,6 +10,8 @@ function Unclaimed({ user }) {
     const [filterFranchise, setFilterFranchise] = useState('')
     const [filterArea, setFilterArea] = useState('')
     const [showModal, setShowModal] = useState(false)
+    const [showReceiptModal, setShowReceiptModal] = useState(false)
+    const [receiptImageUrl, setReceiptImageUrl] = useState('')
     const [editingItem, setEditingItem] = useState(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
@@ -24,7 +26,9 @@ function Unclaimed({ user }) {
         franchise_name: '5A Royal Gaming OPC',
         area: '',
         collector: '',
-        return_date: ''
+        return_date: '',
+        receipt_image: '',
+        receipt_file: null
     })
 
     useEffect(() => {
@@ -66,7 +70,10 @@ function Unclaimed({ user }) {
             alert('Item marked as collected!')
         } catch (error) {
             console.error('Error updating item:', error)
-            alert('Error updating item')
+            console.error('Error details:', JSON.stringify(error, null, 2))
+            // Show detailed error message
+            const errorMessage = error.message || error.error_description || error.hint || error.details || JSON.stringify(error)
+            alert(`Error updating item:\n\n${errorMessage}\n\nCheck browser console (F12) for full details.`)
         } finally {
             setLoading(false)
         }
@@ -107,7 +114,9 @@ function Unclaimed({ user }) {
                 franchise_name: item.franchise_name,
                 area: item.area || '',
                 collector: item.collector || (user?.role?.toLowerCase() === 'collector' ? user.fullname : ''),
-                return_date: formattedReturnDate
+                return_date: formattedReturnDate,
+                receipt_image: item.receipt_image || '',
+                receipt_file: null
             })
         } else {
             setEditingItem(null)
@@ -122,7 +131,9 @@ function Unclaimed({ user }) {
                 franchise_name: '5A Royal Gaming OPC',
                 area: '',
                 collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : '',
-                return_date: ''
+                return_date: '',
+                receipt_image: '',
+                receipt_file: null
             })
         }
         setShowModal(true)
@@ -136,6 +147,12 @@ function Unclaimed({ user }) {
             const chargeAmountTotal = parseFloat(formData.charge_amount || 0)
             const netAmountTotal = winAmountTotal - chargeAmountTotal
 
+            // Upload receipt image if a new file is selected and mode is not Cash
+            let receiptImageUrl = formData.receipt_image
+            if (formData.receipt_file && formData.mode !== 'Cash') {
+                receiptImageUrl = await dataHelpers.uploadReceiptImage(formData.receipt_file)
+            }
+
             const payload = {
                 ...formData,
                 win_amount: winAmountTotal,
@@ -143,9 +160,13 @@ function Unclaimed({ user }) {
                 net: netAmountTotal,
                 status: editingItem ? editingItem.status : 'Unclaimed',
                 return_date: formData.return_date || null,
+                receipt_image: receiptImageUrl || null,
                 // Automatically set collector if user is a collector
                 collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : formData.collector
             }
+
+            // Remove receipt_file from payload as it's not a database field
+            delete payload.receipt_file
 
             if (editingItem) {
                 await dataHelpers.updateUnclaimed(editingItem.id, payload)
@@ -327,7 +348,23 @@ function Unclaimed({ user }) {
                                                 ₱{(parseFloat(item.net || 0) || (parseFloat(item.win_amount || 0) - parseFloat(item.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
-                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.mode || 'N/A'}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
+                                            <div className="flex items-center gap-1">
+                                                <span>{item.mode || 'N/A'}</span>
+                                                {item.receipt_image && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setReceiptImageUrl(item.receipt_image)
+                                                            setShowReceiptModal(true)
+                                                        }}
+                                                        title="View receipt"
+                                                        className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                                                    >
+                                                        <ImageIcon className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.payment_type === 'Full Payment'
                                                 ? 'bg-green-100 text-green-800'
@@ -623,6 +660,57 @@ function Unclaimed({ user }) {
                                             className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                         />
                                     </div>
+                                    {/* Receipt Image Upload - Only show if mode is not Cash */}
+                                    {formData.mode !== 'Cash' && (
+                                        <div className="space-y-1 md:col-span-2">
+                                            <label htmlFor="modal-receipt" className="text-xs font-semibold text-gray-700">
+                                                Transaction Receipt Image {formData.mode === 'Back Transfer' || formData.mode === 'Deposited' ? '(Required)' : '(Optional)'}
+                                            </label>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <label
+                                                        htmlFor="modal-receipt"
+                                                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-indigo-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all"
+                                                    >
+                                                        <Upload className="w-5 h-5 text-indigo-600" />
+                                                        <span className="text-indigo-700 font-medium">
+                                                            {formData.receipt_file ? formData.receipt_file.name : 'Choose receipt image'}
+                                                        </span>
+                                                    </label>
+                                                    <input
+                                                        id="modal-receipt"
+                                                        name="receipt_image"
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0]
+                                                            if (file) {
+                                                                setFormData({ ...formData, receipt_file: file })
+                                                            }
+                                                        }}
+                                                        className="hidden"
+                                                    />
+                                                </div>
+                                                {formData.receipt_image && !formData.receipt_file && (
+                                                    <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
+                                                        <ImageIcon className="w-4 h-4 text-green-600" />
+                                                        <span className="text-xs text-green-700">Current receipt image uploaded</span>
+                                                        <a
+                                                            href={formData.receipt_image}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="ml-auto text-xs text-indigo-600 hover:text-indigo-800 underline"
+                                                        >
+                                                            View
+                                                        </a>
+                                                    </div>
+                                                )}
+                                                <p className="text-xs text-gray-500">
+                                                    Upload a photo of the transaction receipt for {formData.mode} transactions
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="pt-3 flex gap-3">
                                     <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-all">
@@ -637,6 +725,63 @@ function Unclaimed({ user }) {
                     </div>
                 )
             }
+
+            {/* Receipt Image Modal */}
+            {showReceiptModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+                    onClick={() => setShowReceiptModal(false)}
+                >
+                    <div
+                        className="relative bg-white rounded-2xl shadow-2xl max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <ImageIcon className="w-6 h-6" />
+                                Transaction Receipt
+                            </h2>
+                            <button
+                                onClick={() => setShowReceiptModal(false)}
+                                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Image */}
+                        <div className="p-6 flex items-center justify-center bg-gray-50">
+                            <img
+                                src={receiptImageUrl}
+                                alt="Transaction Receipt"
+                                className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
+                                onError={(e) => {
+                                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
+                                }}
+                            />
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                            <a
+                                href={receiptImageUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium underline"
+                            >
+                                Open in new tab
+                            </a>
+                            <button
+                                onClick={() => setShowReceiptModal(false)}
+                                className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     )
 }
