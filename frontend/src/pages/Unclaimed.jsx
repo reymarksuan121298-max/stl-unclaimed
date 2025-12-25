@@ -28,6 +28,7 @@ function Unclaimed({ user }) {
         area: '',
         collector: '',
         return_date: '',
+        status: 'Unclaimed',
         receipt_image: '',
         receipt_file: null
     })
@@ -117,6 +118,7 @@ function Unclaimed({ user }) {
                 area: item.area || '',
                 collector: item.collector || (user?.role?.toLowerCase() === 'collector' ? user.fullname : ''),
                 return_date: formattedReturnDate,
+                status: item.status || 'Unclaimed',
                 receipt_image: item.receipt_image || '',
                 receipt_file: null
             })
@@ -135,6 +137,7 @@ function Unclaimed({ user }) {
                 area: '',
                 collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : '',
                 return_date: '',
+                status: 'Unclaimed',
                 receipt_image: '',
                 receipt_file: null
             })
@@ -161,7 +164,7 @@ function Unclaimed({ user }) {
                 win_amount: winAmountTotal,
                 charge_amount: chargeAmountTotal,
                 net: netAmountTotal,
-                status: editingItem ? editingItem.status : 'Unclaimed',
+                status: formData.status || 'Unclaimed',
                 return_date: formData.return_date || null,
                 receipt_image: receiptImageUrl || null,
                 // Automatically set collector if user is a collector
@@ -625,6 +628,20 @@ function Unclaimed({ user }) {
                                         >
                                             <option value="Full Payment">Full Payment</option>
                                             <option value="Partial Payment">Partial Payment</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-status" className="text-xs font-semibold text-gray-700">Status</label>
+                                        <select
+                                            id="modal-status"
+                                            name="status"
+                                            value={formData.status}
+                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        >
+                                            <option value="Unclaimed">Unclaimed</option>
+                                            <option value="Collected">Collected</option>
+                                            <option value="Cancelled">Cancelled</option>
                                         </select>
                                     </div>
                                     <div className="space-y-1">
