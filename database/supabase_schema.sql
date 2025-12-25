@@ -2,11 +2,13 @@
 -- Last Updated: 2025-12-25
 -- 
 -- Recent Changes:
+-- - Added bet_amount column to Unclaimed and OverAllCollections tables (2025-12-25)
+-- - Added area column to OverAllCollections table (2025-12-25)
 -- - Added receipt_image column to Unclaimed and OverAllCollections tables
 -- - Added mode column (Cash, Back Transfer, Deposited, Gcash, Cebuana, Palawan)
 -- - Added payment_type column (Full Payment, Partial Payment)
 -- - Added charge_amount column to Unclaimed table
--- - Updated trigger to copy receipt_image, mode, and payment_type to collections
+-- - Updated trigger to copy receipt_image, mode, payment_type, bet_amount, and area to collections
 -- - Fixed charge_amount calculation in trigger (now uses actual charge_amount field)
 
 -- Enable necessary extensions
@@ -35,6 +37,7 @@ CREATE TABLE IF NOT EXISTS "Unclaimed" (
     teller_name TEXT NOT NULL,
     bet_number TEXT NOT NULL,
     draw_date DATE NOT NULL,
+    bet_amount NUMERIC(15, 2) NOT NULL DEFAULT 0, -- Original bet amount
     win_amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
     net NUMERIC(15, 2) NOT NULL DEFAULT 0,
     charge_amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
@@ -59,11 +62,13 @@ CREATE TABLE IF NOT EXISTS "OverAllCollections" (
     bet_number TEXT NOT NULL,
     draw_date DATE NOT NULL,
     return_date TIMESTAMPTZ NOT NULL,
+    bet_amount NUMERIC(15, 2) NOT NULL DEFAULT 0, -- Original bet amount
     amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
     charge_amount NUMERIC(15, 2) NOT NULL DEFAULT 0,
     net NUMERIC(15, 2) NOT NULL DEFAULT 0,
     collector TEXT,
     franchise_name TEXT NOT NULL,
+    area TEXT, -- Area field
     mode TEXT, -- Cash, Back Transfer, Deposited, Gcash, Cebuana, Palawan
     payment_type TEXT, -- Full Payment, Partial Payment
     receipt_image TEXT, -- URL to transaction receipt image copied from Unclaimed
@@ -111,14 +116,15 @@ BEGIN
         -- Insert into OverAllCollections
         INSERT INTO "OverAllCollections" (
             unclaimed_id, teller_name, bet_number, draw_date, 
-            return_date, amount, charge_amount, net, 
-            collector, franchise_name, receipt_image, mode, payment_type
+            return_date, bet_amount, amount, charge_amount, net, 
+            collector, franchise_name, area, receipt_image, mode, payment_type
         ) VALUES (
             NEW.id, NEW.teller_name, NEW.bet_number, NEW.draw_date,
-            COALESCE(NEW.return_date, NOW()), NEW.win_amount, 
+            COALESCE(NEW.return_date, NOW()), COALESCE(NEW.bet_amount, 0), NEW.win_amount, 
             COALESCE(NEW.charge_amount, 0), NEW.net,
             COALESCE(NEW.collector, 'System'),
             NEW.franchise_name,
+            NEW.area,
             NEW.receipt_image,
             COALESCE(NEW.mode, 'Cash'),
             COALESCE(NEW.payment_type, 'Full Payment')

@@ -128,6 +128,7 @@ function Collections({ user }) {
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Number</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Draw Date</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Return Timestamp</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Amt</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Amount</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Charge</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Net</th>
@@ -141,7 +142,7 @@ function Collections({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {filteredItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="12" className="px-6 py-12 text-center">
+                                    <td colSpan="13" className="px-6 py-12 text-center">
                                         <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No collections found</p>
                                     </td>
@@ -158,6 +159,11 @@ function Collections({ user }) {
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                                             {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap">
+                                            <span className="font-semibold text-purple-600 text-xs">
+                                                ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <span className="font-semibold text-blue-600 text-xs">

@@ -19,6 +19,7 @@ function Unclaimed({ user }) {
         teller_name: '',
         bet_number: '',
         draw_date: '',
+        bet_amount: '',
         win_amount: '',
         charge_amount: '',
         mode: 'Cash',
@@ -107,6 +108,7 @@ function Unclaimed({ user }) {
                 teller_name: item.teller_name,
                 bet_number: item.bet_number,
                 draw_date: item.draw_date,
+                bet_amount: item.bet_amount || '',
                 win_amount: item.win_amount,
                 charge_amount: item.charge_amount || '',
                 mode: item.mode || 'Cash',
@@ -124,6 +126,7 @@ function Unclaimed({ user }) {
                 teller_name: '',
                 bet_number: '',
                 draw_date: '',
+                bet_amount: '',
                 win_amount: '',
                 charge_amount: '',
                 mode: 'Cash',
@@ -301,9 +304,9 @@ function Unclaimed({ user }) {
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet #</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Draw Date</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Return Timestamp</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Amt</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Win Amt</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Charge</th>
-                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Net</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Mode</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Payment</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Franchise</th>
@@ -315,7 +318,7 @@ function Unclaimed({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="13" className="px-6 py-12 text-center">
+                                    <td colSpan="12" className="px-6 py-12 text-center">
                                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No unclaimed items found</p>
                                     </td>
@@ -334,6 +337,11 @@ function Unclaimed({ user }) {
                                             {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
+                                            <span className="font-semibold text-blue-600 text-xs">
+                                                ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2 whitespace-nowrap">
                                             <span className="font-semibold text-green-600 text-xs">
                                                 ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
@@ -341,11 +349,6 @@ function Unclaimed({ user }) {
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             <span className="text-xs text-red-600">
                                                 ₱{parseFloat(item.charge_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </td>
-                                        <td className="px-3 py-2 whitespace-nowrap">
-                                            <span className="font-semibold text-indigo-600 text-xs">
-                                                ₱{(parseFloat(item.net || 0) || (parseFloat(item.win_amount || 0) - parseFloat(item.charge_amount || 0))).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
@@ -534,6 +537,20 @@ function Unclaimed({ user }) {
                                             value={formData.draw_date}
                                             onChange={(e) => setFormData({ ...formData, draw_date: e.target.value })}
                                             className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="modal-bet-amount" className="text-xs font-semibold text-gray-700">Bet Amount</label>
+                                        <input
+                                            id="modal-bet-amount"
+                                            name="bet_amount"
+                                            type="number"
+                                            step="0.01"
+                                            required
+                                            value={formData.bet_amount}
+                                            onChange={(e) => setFormData({ ...formData, bet_amount: e.target.value })}
+                                            className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                            placeholder="0.00"
                                         />
                                     </div>
                                     <div className="space-y-1">
