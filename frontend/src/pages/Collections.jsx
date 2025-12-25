@@ -10,10 +10,16 @@ function Collections({ user }) {
     const [filterCollector, setFilterCollector] = useState('')
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage] = useState(10)
 
     useEffect(() => {
         loadCollections()
     }, [filterFranchise, filterCollector])
+
+    useEffect(() => {
+        setCurrentPage(1) // Reset to first page when search/filter changes
+    }, [searchTerm, filterFranchise, filterCollector])
 
     const loadCollections = async () => {
         try {
@@ -37,6 +43,16 @@ function Collections({ user }) {
         item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.collector?.toLowerCase().includes(searchTerm.toLowerCase())
     )
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber)
+    const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages))
+    const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
     const collectors = [...new Set(items.map(i => i.collector).filter(Boolean))].sort()
@@ -139,7 +155,7 @@ function Collections({ user }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredItems.length === 0 ? (
+                            {currentItems.length === 0 ? (
                                 <tr>
                                     <td colSpan="12" className="px-6 py-12 text-center">
                                         <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -147,7 +163,7 @@ function Collections({ user }) {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredItems.map((item) => (
+                                currentItems.map((item) => (
                                     <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-4 py-3 whitespace-nowrap">
                                             <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
@@ -213,6 +229,69 @@ function Collections({ user }) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredItems.length)} of {filteredItems.length} items
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={prevPage}
+                                disabled={currentPage === 1}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Previous
+                            </button>
+
+                            <div className="flex gap-1">
+                                {[...Array(totalPages)].map((_, index) => {
+                                    const pageNumber = index + 1
+                                    // Show first page, last page, current page, and pages around current
+                                    if (
+                                        pageNumber === 1 ||
+                                        pageNumber === totalPages ||
+                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <button
+                                                key={pageNumber}
+                                                onClick={() => paginate(pageNumber)}
+                                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === pageNumber
+                                                    ? 'bg-green-600 text-white'
+                                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        )
+                                    } else if (
+                                        pageNumber === currentPage - 2 ||
+                                        pageNumber === currentPage + 2
+                                    ) {
+                                        return <span key={pageNumber} className="px-2 text-gray-400">...</span>
+                                    }
+                                    return null
+                                })}
+                            </div>
+
+                            <button
+                                onClick={nextPage}
+                                disabled={currentPage === totalPages}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Summary Stats */}

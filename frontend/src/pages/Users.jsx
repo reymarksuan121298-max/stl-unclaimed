@@ -11,6 +11,8 @@ function Users({ user }) {
 
     const [showUserModal, setShowUserModal] = useState(false)
     const [editingUser, setEditingUser] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const [itemsPerPage] = useState(10)
     const [formData, setFormData] = useState({
         username: '',
         password: '',
@@ -24,6 +26,10 @@ function Users({ user }) {
     useEffect(() => {
         loadUsers()
     }, [filterRole, filterStatus])
+
+    useEffect(() => {
+        setCurrentPage(1) // Reset to first page when search/filter changes
+    }, [searchTerm, filterRole, filterStatus])
 
     const loadUsers = async () => {
         try {
@@ -124,6 +130,16 @@ function Users({ user }) {
         user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.contact_number?.includes(searchTerm)
     )
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem)
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber)
+    const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages))
+    const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
     const roles = ['admin', 'checker', 'general manager', 'specialist', 'collector', 'staff']
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
@@ -232,7 +248,7 @@ function Users({ user }) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredUsers.length === 0 ? (
+                            {currentUsers.length === 0 ? (
                                 <tr>
                                     <td colSpan="7" className="px-6 py-12 text-center">
                                         <UsersIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -240,7 +256,7 @@ function Users({ user }) {
                                     </td>
                                 </tr>
                             ) : (
-                                filteredUsers.map((user) => (
+                                currentUsers.map((user) => (
                                     <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="font-medium text-gray-900">{user.username}</div>
@@ -299,6 +315,69 @@ function Users({ user }) {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredUsers.length)} of {filteredUsers.length} users
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={prevPage}
+                                disabled={currentPage === 1}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === 1
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Previous
+                            </button>
+
+                            <div className="flex gap-1">
+                                {[...Array(totalPages)].map((_, index) => {
+                                    const pageNumber = index + 1
+                                    // Show first page, last page, current page, and pages around current
+                                    if (
+                                        pageNumber === 1 ||
+                                        pageNumber === totalPages ||
+                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                    ) {
+                                        return (
+                                            <button
+                                                key={pageNumber}
+                                                onClick={() => paginate(pageNumber)}
+                                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === pageNumber
+                                                    ? 'bg-indigo-600 text-white'
+                                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        )
+                                    } else if (
+                                        pageNumber === currentPage - 2 ||
+                                        pageNumber === currentPage + 2
+                                    ) {
+                                        return <span key={pageNumber} className="px-2 text-gray-400">...</span>
+                                    }
+                                    return null
+                                })}
+                            </div>
+
+                            <button
+                                onClick={nextPage}
+                                disabled={currentPage === totalPages}
+                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === totalPages
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                    }`}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* User Modal */}
