@@ -4,6 +4,7 @@ import {
     Package,
     Clock,
     DollarSign,
+    Wallet,
     FileText,
     Users,
     LogOut,
@@ -31,6 +32,7 @@ function Layout({ children, user }) {
         { name: 'Dashboard', href: '/', icon: LayoutDashboard, permission: PERMISSIONS.VIEW_DASHBOARD },
         { name: 'Unclaimed', href: '/unclaimed', icon: Package, permission: PERMISSIONS.VIEW_UNCLAIMED },
         { name: 'Pending', href: '/pending', icon: Clock, permission: PERMISSIONS.VIEW_PENDING },
+        { name: 'Cash Deposits', href: '/cash-deposits', icon: Wallet, permission: PERMISSIONS.VIEW_CASH_DEPOSITS },
         { name: 'Collections', href: '/collections', icon: DollarSign, permission: PERMISSIONS.VIEW_COLLECTIONS },
         { name: 'Reports', href: '/reports', icon: FileText, permission: PERMISSIONS.VIEW_REPORTS },
         { name: 'Users', href: '/users', icon: Users, permission: PERMISSIONS.VIEW_USERS },
@@ -196,8 +198,8 @@ function Layout({ children, user }) {
                                                     to={item.href}
                                                     onClick={() => setIsMobileMenuOpen(false)}
                                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
-                                                            ? 'bg-white text-indigo-600 shadow-lg'
-                                                            : 'text-white hover:bg-white/10'
+                                                        ? 'bg-white text-indigo-600 shadow-lg'
+                                                        : 'text-white hover:bg-white/10'
                                                         }`}
                                                 >
                                                     <Icon className="w-5 h-5" />

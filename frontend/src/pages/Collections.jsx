@@ -10,6 +10,7 @@ function Collections({ user }) {
     const [filterCollector, setFilterCollector] = useState('')
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
+    const [selectedReceiptItem, setSelectedReceiptItem] = useState(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
 
@@ -38,11 +39,18 @@ function Collections({ user }) {
         }
     }
 
-    const filteredItems = items.filter(item =>
-        item.teller_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.collector?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredItems = items.filter(item => {
+        // Text search filter
+        const matchesSearch = item.teller_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.collector?.toLowerCase().includes(searchTerm.toLowerCase())
+
+        // Cashier role filter - only show cash transactions
+        const isCashier = user?.role?.toLowerCase() === 'cashier'
+        const matchesCashierFilter = !isCashier || item.mode?.toLowerCase() === 'cash'
+
+        return matchesSearch && matchesCashierFilter
+    })
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
@@ -198,11 +206,13 @@ function Collections({ user }) {
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 <span>{item.mode || 'N/A'}</span>
-                                                {item.receipt_image && (
+                                                {(item.receipt_image || item.deposit_receipt) && (
                                                     <button
                                                         onClick={() => {
-                                                            console.log('Opening receipt modal for item:', item.id, 'URL:', item.receipt_image)
-                                                            setReceiptImageUrl(item.receipt_image)
+                                                            const imageUrl = item.receipt_image || item.deposit_receipt
+                                                            console.log('Opening receipt modal for item:', item.id, 'URL:', imageUrl)
+                                                            setReceiptImageUrl(imageUrl)
+                                                            setSelectedReceiptItem(item)
                                                             setShowReceiptModal(true)
                                                         }}
                                                         title="View receipt"
@@ -327,11 +337,11 @@ function Collections({ user }) {
                     onClick={() => setShowReceiptModal(false)}
                 >
                     <div
-                        className="relative bg-white rounded-2xl shadow-2xl max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200"
+                        className="relative bg-white rounded-2xl shadow-2xl max-w-lg max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-between">
+                        <div className="px-6 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white flex items-center justify-between flex-shrink-0">
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 <ImageIcon className="w-6 h-6" />
                                 Transaction Receipt
@@ -345,22 +355,48 @@ function Collections({ user }) {
                         </div>
 
                         {/* Image */}
-                        <div className="p-6 flex items-center justify-center bg-gray-50 min-h-[400px]">
-                            {receiptImageUrl ? (
-                                <img
-                                    src={receiptImageUrl}
-                                    alt="Transaction Receipt"
-                                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
-                                    onError={(e) => {
-                                        console.error('Failed to load receipt image:', receiptImageUrl)
-                                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
-                                    }}
-                                    onLoad={() => console.log('Receipt image loaded successfully:', receiptImageUrl)}
-                                />
-                            ) : (
-                                <div className="text-center">
-                                    <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                    <p className="text-gray-500">No receipt image available</p>
+                        <div className="p-4 bg-gray-50 overflow-y-auto flex-1">
+                            <div className="flex items-center justify-center mb-4">
+                                {receiptImageUrl ? (
+                                    <img
+                                        src={receiptImageUrl}
+                                        alt="Transaction Receipt"
+                                        className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"
+                                        onError={(e) => {
+                                            console.error('Failed to load receipt image:', receiptImageUrl)
+                                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
+                                        }}
+                                        onLoad={() => console.log('Receipt image loaded successfully:', receiptImageUrl)}
+                                    />
+                                ) : (
+                                    <div className="text-center">
+                                        <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                        <p className="text-gray-500">No receipt image available</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Mode and Reference Info */}
+                            {selectedReceiptItem && (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                                            <p className="text-xs text-gray-500 mb-1">Payment Mode</p>
+                                            <p className="font-semibold text-gray-900">{selectedReceiptItem.mode || 'Cash'}</p>
+                                        </div>
+                                        {selectedReceiptItem.reference_number && (
+                                            <div className="bg-white p-3 rounded-lg border border-gray-200">
+                                                <p className="text-xs text-gray-500 mb-1">Reference #</p>
+                                                <p className="font-semibold text-gray-900">{selectedReceiptItem.reference_number}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                                        <p className="text-xs text-green-600 mb-1">Total Net Amount</p>
+                                        <p className="text-2xl font-bold text-green-700">
+                                            ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>

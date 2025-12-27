@@ -126,12 +126,13 @@ function Reports({ user }) {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector (10%)</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Agent (30%)</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Admin (50%)</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Charges</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="px-6 py-12 text-center">
+                                    <td colSpan="9" className="px-6 py-12 text-center">
                                         <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No reports found</p>
                                     </td>
@@ -167,6 +168,11 @@ function Reports({ user }) {
                                         <td className="px-6 py-4">
                                             <span className="text-sm font-semibold text-purple-600">
                                                 ₱{parseFloat(item.admin_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-sm font-semibold text-red-600">
+                                                ₱{parseFloat(item.total_charges || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                     </tr>
@@ -241,7 +247,7 @@ function Reports({ user }) {
             </div>
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
                     <p className="text-purple-100 text-sm mb-1">Total Amount</p>
                     <p className="text-2xl font-bold">
@@ -270,6 +276,12 @@ function Reports({ user }) {
                     <p className="text-pink-100 text-sm mb-1">Admin Total</p>
                     <p className="text-2xl font-bold">
                         ₱{filteredItems.reduce((sum, item) => sum + parseFloat(item.admin_amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </p>
+                </div>
+                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white">
+                    <p className="text-red-100 text-sm mb-1">Total Charges</p>
+                    <p className="text-2xl font-bold">
+                        ₱{filteredItems.reduce((sum, item) => sum + parseFloat(item.total_charges || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </p>
                 </div>
             </div>

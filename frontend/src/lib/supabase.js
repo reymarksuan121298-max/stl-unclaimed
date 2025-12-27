@@ -51,7 +51,13 @@ export const dataHelpers = {
             .select('*')
             .order('id', { ascending: false })
 
-        if (filters.status) query = query.eq('status', filters.status)
+        if (filters.status) {
+            if (Array.isArray(filters.status)) {
+                query = query.in('status', filters.status)
+            } else {
+                query = query.eq('status', filters.status)
+            }
+        }
         if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
         if (filters.area) query = query.eq('area', filters.area)
         if (filters.collector) query = query.eq('collector', filters.collector)
@@ -61,17 +67,28 @@ export const dataHelpers = {
         return data
     },
 
-    markAsCollected: async (id, collectorName) => {
+
+    markAsCollected: async (id, collectorName, userRole = null) => {
         // 1. Get current item to ensure it exists and potentially get default collector
         const { data: item, error: fetchError } = await supabase
             .from('Unclaimed')
             .select('*')
             .eq('id', id)
-            .single()
+            .maybeSingle()
 
         if (fetchError) throw fetchError
 
+        // Check if item exists
+        if (!item) {
+            throw new Error('Item not found. It may have been deleted or you may not have permission to access it.')
+        }
+
         const returnDate = new Date().toISOString()
+
+        // Determine status based on user role
+        // Cashiers mark as "Uncollected" (pending admin verification)
+        // Admin/Specialist mark as "Collected" (final status)
+        const newStatus = userRole?.toLowerCase() === 'cashier' ? 'Uncollected' : 'Collected'
 
         // 2. Update Unclaimed status
         // This update will fire the database trigger 'on_unclaimed_collected'
@@ -79,7 +96,7 @@ export const dataHelpers = {
         const { error: updateError } = await supabase
             .from('Unclaimed')
             .update({
-                status: 'Collected',
+                status: newStatus,
                 return_date: returnDate,
                 // Prioritize the original assigned collector. 
                 // Only use the person marking it (collectorName) if it was empty.
@@ -184,6 +201,104 @@ export const dataHelpers = {
             console.error('Upload error:', error)
             throw error
         }
+    },
+
+    // Cash deposit operations for cashiers
+    depositCash: async (id, depositData, cashierName) => {
+        const { data, error } = await supabase
+            .from('Unclaimed')
+            .update({
+                cash_deposited: true,
+                deposit_date: new Date().toISOString(),
+                deposit_amount: depositData.deposit_amount,
+                deposit_receipt: depositData.deposit_receipt,
+                cashier_name: cashierName,
+                bank_name: depositData.bank_name,
+                deposit_reference: depositData.deposit_reference
+            })
+            .eq('id', id)
+            .select()
+
+        if (error) throw error
+        return data
+    },
+
+    getPendingCashDeposits: async (filters = {}) => {
+        let query = supabase
+            .from('Unclaimed')
+            .select('*')
+            .in('status', ['Collected', 'Uncollected']) // Include both Collected and Uncollected
+            .eq('mode', 'Cash')
+            .or('cash_deposited.is.null,cash_deposited.eq.false')
+            .order('return_date', { ascending: false })
+
+        if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
+        if (filters.area) query = query.eq('area', filters.area)
+        if (filters.collector) query = query.eq('collector', filters.collector)
+
+        const { data, error } = await query
+        if (error) throw error
+        return data
+    },
+
+    uploadDepositReceipt: async (file) => {
+        if (!file) return null
+
+        try {
+            // Create a unique filename
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+            const filePath = `deposits/${fileName}`
+
+            // Upload to Supabase Storage
+            const { data, error } = await supabase.storage
+                .from('unclaimed-receipts')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
+
+            if (error) {
+                // Provide helpful error message if bucket doesn't exist
+                if (error.message.includes('Bucket not found')) {
+                    throw new Error(
+                        'Storage bucket "unclaimed-receipts" not found. Please create it in Supabase Dashboard:\n' +
+                        '1. Go to Storage → New bucket\n' +
+                        '2. Name: unclaimed-receipts\n' +
+                        '3. Make it Public\n' +
+                        '4. Click Create'
+                    )
+                }
+                throw error
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('unclaimed-receipts')
+                .getPublicUrl(filePath)
+
+            return publicUrl
+        } catch (error) {
+            console.error('Upload error:', error)
+            throw error
+        }
+    },
+
+    // Verify/approve deposit (admin only) - changes status from Uncollected to Collected
+    verifyDeposit: async (id, adminName) => {
+        const { data, error } = await supabase
+            .from('Unclaimed')
+            .update({
+                status: 'Collected',
+                verified_by: adminName,
+                verified_at: new Date().toISOString()
+            })
+            .eq('id', id)
+            .eq('status', 'Uncollected') // Only verify items that are Uncollected
+            .select()
+
+        if (error) throw error
+        return data
     },
 
     // Pending operations
@@ -300,11 +415,20 @@ export const dataHelpers = {
     },
 
     // Dashboard statistics
-    getDashboardStats: async () => {
+    getDashboardStats: async (user = null) => {
+        // For cashiers, only count cash items
+        const isCashier = user?.role?.toLowerCase() === 'cashier'
+
         const [unclaimed, pending, collections, reports] = await Promise.all([
-            supabase.from('Unclaimed').select('*', { count: 'exact', head: true }),
-            supabase.from('Pending').select('*', { count: 'exact', head: true }),
-            supabase.from('OverAllCollections').select('net'),
+            isCashier
+                ? supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).eq('status', 'Unclaimed').eq('mode', 'Cash')
+                : supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).eq('status', 'Unclaimed'),
+            isCashier
+                ? supabase.from('Pending').select('*', { count: 'exact', head: true }).eq('mode', 'Cash')
+                : supabase.from('Pending').select('*', { count: 'exact', head: true }),
+            isCashier
+                ? supabase.from('OverAllCollections').select('net').eq('mode', 'Cash')
+                : supabase.from('OverAllCollections').select('net'),
             supabase.from('Reports').select('amount')
         ])
 

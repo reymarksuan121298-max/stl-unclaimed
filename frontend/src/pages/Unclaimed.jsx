@@ -9,9 +9,15 @@ function Unclaimed({ user }) {
     const [searchTerm, setSearchTerm] = useState('')
     const [filterFranchise, setFilterFranchise] = useState('')
     const [filterArea, setFilterArea] = useState('')
+    const [filterStatus, setFilterStatus] = useState(() => {
+        const role = user?.role?.toLowerCase()
+        // Admin, Specialist, and now Cashier default to 'All Statuses'
+        return (role === 'admin' || role === 'specialist' || role === 'cashier') ? '' : 'Unclaimed'
+    })
     const [showModal, setShowModal] = useState(false)
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
+    const [selectedReceiptItem, setSelectedReceiptItem] = useState(null)
     const [editingItem, setEditingItem] = useState(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
@@ -35,16 +41,30 @@ function Unclaimed({ user }) {
 
     useEffect(() => {
         loadUnclaimed()
-    }, [filterFranchise, filterArea])
+    }, [filterFranchise, filterArea, filterStatus])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
-    }, [searchTerm, filterFranchise, filterArea])
+    }, [searchTerm, filterFranchise, filterArea, filterStatus])
 
     const loadUnclaimed = async () => {
         try {
             setLoading(true)
             const filters = {}
+
+            // For Cashiers, only show truly Unclaimed items in the default view
+            // Once they mark it as collected, it "moves" to their Cash Deposits page
+            if (filterStatus === 'Unclaimed') {
+                if (user?.role?.toLowerCase() === 'cashier') {
+                    filters.status = 'Unclaimed'
+                } else {
+                    // Admin/Specialist see both Unclaimed and Uncollected (for verification)
+                    filters.status = ['Unclaimed', 'Uncollected']
+                }
+            } else if (filterStatus) {
+                filters.status = filterStatus
+            }
+
             if (filterFranchise) filters.franchise_name = filterFranchise
             if (filterArea) filters.area = filterArea
 
@@ -67,7 +87,7 @@ function Unclaimed({ user }) {
         if (!confirm('Mark this item as collected? This will also generate a report.')) return
         try {
             setLoading(true)
-            await dataHelpers.markAsCollected(id, user.fullname)
+            await dataHelpers.markAsCollected(id, user.fullname, user.role)
             loadUnclaimed()
             alert('Item marked as collected!')
         } catch (error) {
@@ -76,6 +96,22 @@ function Unclaimed({ user }) {
             // Show detailed error message
             const errorMessage = error.message || error.error_description || error.hint || error.details || JSON.stringify(error)
             alert(`Error updating item:\n\n${errorMessage}\n\nCheck browser console (F12) for full details.`)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleVerifyDeposit = async (item) => {
+        if (!confirm(`Verify and mark this collection as fully collected?\n\nAgent: ${item.teller_name}\nBet #: ${item.bet_number}\nAmount: ₱${parseFloat(item.net || item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`)) return
+
+        try {
+            setLoading(true)
+            await dataHelpers.verifyDeposit(item.id, user.fullname)
+            loadUnclaimed()
+            alert('Collection verified and marked as collected!')
+        } catch (error) {
+            console.error('Error verifying collection:', error)
+            alert('Error verifying collection: ' + (error.message || 'Unknown error'))
         } finally {
             setLoading(false)
         }
@@ -155,8 +191,15 @@ function Unclaimed({ user }) {
 
             // Upload receipt image if a new file is selected and mode is not Cash
             let receiptImageUrl = formData.receipt_image
-            if (formData.receipt_file && formData.mode !== 'Cash') {
-                receiptImageUrl = await dataHelpers.uploadReceiptImage(formData.receipt_file)
+            const fileToUpload = formData.receipt_file || formData.receipt_image_file
+            if (fileToUpload && formData.mode !== 'Cash') {
+                receiptImageUrl = await dataHelpers.uploadReceiptImage(fileToUpload)
+            }
+
+            // Auto-set return_date if status is being changed to Collected or Uncollected and it's empty
+            let returnDateValue = formData.return_date || null
+            if ((formData.status === 'Collected' || formData.status === 'Uncollected') && !returnDateValue) {
+                returnDateValue = new Date().toISOString()
             }
 
             const payload = {
@@ -165,14 +208,15 @@ function Unclaimed({ user }) {
                 charge_amount: chargeAmountTotal,
                 net: netAmountTotal,
                 status: formData.status || 'Unclaimed',
-                return_date: formData.return_date || null,
+                return_date: returnDateValue,
                 receipt_image: receiptImageUrl || null,
                 // Automatically set collector if user is a collector
                 collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : formData.collector
             }
 
-            // Remove receipt_file from payload as it's not a database field
+            // Remove file objects from payload as they're not database fields
             delete payload.receipt_file
+            delete payload.receipt_image_file
 
             if (editingItem) {
                 await dataHelpers.updateUnclaimed(editingItem.id, payload)
@@ -185,16 +229,30 @@ function Unclaimed({ user }) {
             loadUnclaimed()
         } catch (error) {
             console.error('Error saving item:', error)
-            alert('Error saving item: ' + error.message)
+            const errorMsg = error.message || error.error_description || error.details || 'Check your internet connection or try again.'
+            alert('Error saving item: ' + errorMsg)
         } finally {
             setLoading(false)
         }
     }
 
-    const filteredItems = items.filter(item =>
-        item.teller_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredItems = items.filter(item => {
+        // Text search filter
+        const matchesSearch = item.teller_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase())
+
+        // Role-based mode filter
+        const userRole = user?.role?.toLowerCase()
+        let matchesModeFilter = true
+
+        // Only cashiers have mode restrictions (cash only)
+        if (userRole === 'cashier') {
+            matchesModeFilter = item.mode?.toLowerCase() === 'cash'
+        }
+        // All other roles (collector, admin, etc.) see all modes
+
+        return matchesSearch && matchesModeFilter
+    })
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
@@ -245,7 +303,7 @@ function Unclaimed({ user }) {
             {/* Filters */}
             {user?.role?.toLowerCase() !== 'collector' && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'cashier' ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <label htmlFor="unclaimed-search" className="sr-only">Search items</label>
@@ -293,6 +351,26 @@ function Unclaimed({ user }) {
                                 ))}
                             </select>
                         </div>
+
+                        {user?.role?.toLowerCase() !== 'cashier' && (
+                            <div className="relative">
+                                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <label htmlFor="unclaimed-status-filter" className="sr-only">Filter by status</label>
+                                <select
+                                    id="unclaimed-status-filter"
+                                    name="status"
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="Unclaimed">Unclaimed</option>
+                                    <option value="Uncollected">Uncollected</option>
+                                    <option value="Collected">Collected</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -314,6 +392,7 @@ function Unclaimed({ user }) {
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Payment</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Franchise</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Area</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Collector</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Status</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Actions</th>
                             </tr>
@@ -321,7 +400,7 @@ function Unclaimed({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="12" className="px-6 py-12 text-center">
+                                    <td colSpan="14" className="px-6 py-12 text-center">
                                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No unclaimed items found</p>
                                     </td>
@@ -357,11 +436,13 @@ function Unclaimed({ user }) {
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 <span>{item.mode || 'N/A'}</span>
-                                                {item.receipt_image && (
+                                                {(item.receipt_image || item.deposit_receipt) && (
                                                     <button
                                                         onClick={() => {
-                                                            console.log('Opening receipt modal for item:', item.id, 'URL:', item.receipt_image)
-                                                            setReceiptImageUrl(item.receipt_image)
+                                                            const imageUrl = item.receipt_image || item.deposit_receipt
+                                                            console.log('Opening receipt modal for item:', item.id, 'URL:', imageUrl)
+                                                            setReceiptImageUrl(imageUrl)
+                                                            setSelectedReceiptItem(item)
                                                             setShowReceiptModal(true)
                                                         }}
                                                         title="View receipt"
@@ -382,23 +463,47 @@ function Unclaimed({ user }) {
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.franchise_name || 'N/A'}</td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.collector || 'N/A'}</td>
                                         <td className="px-3 py-2 whitespace-nowrap">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Unclaimed'
-                                                ? 'bg-yellow-100 text-yellow-800'
-                                                : item.status === 'Collected'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {item.status}
-                                            </span>
+                                            {(() => {
+                                                // For cashiers, show "Collected" when status is "Uncollected"
+                                                const displayStatus = (user?.role?.toLowerCase() === 'cashier' && item.status === 'Uncollected')
+                                                    ? 'Collected'
+                                                    : item.status;
+
+                                                return (
+                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Unclaimed'
+                                                        ? 'bg-yellow-100 text-yellow-800'
+                                                        : item.status === 'Uncollected'
+                                                            ? 'bg-orange-100 text-orange-800'
+                                                            : item.status === 'Collected'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : 'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                        {displayStatus}
+                                                    </span>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             <div className="flex items-center gap-1">
                                                 {item.status === 'Unclaimed' && hasPermission(user, PERMISSIONS.MARK_AS_COLLECTED) && (
+                                                    // For cashiers, only show button for cash items
+                                                    (user?.role?.toLowerCase() !== 'cashier' || item.mode?.toLowerCase() === 'cash') && (
+                                                        <button
+                                                            onClick={() => handleMarkAsCollected(item.id)}
+                                                            className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                            title="Mark as Collected"
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                        </button>
+                                                    )
+                                                )}
+                                                {item.status === 'Uncollected' && (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
                                                     <button
-                                                        onClick={() => handleMarkAsCollected(item.id)}
-                                                        className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                                                        title="Mark as Collected"
+                                                        onClick={() => handleVerifyDeposit(item)}
+                                                        className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                                        title="Verify & Mark as Collected"
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </button>
@@ -627,8 +732,8 @@ function Unclaimed({ user }) {
                                                                 charge_amount: newMode === 'Cash' ? '0' : formData.charge_amount
                                                             });
                                                         }}
-                                                        disabled={isCollectorEditMode}
-                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        disabled={isCollectorEditMode || user?.role?.toLowerCase() === 'cashier'}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode || user?.role?.toLowerCase() === 'cashier' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                     >
                                                         <option value="Cash">Cash</option>
                                                         <option value="Back Transfer">Back Transfer</option>
@@ -636,6 +741,9 @@ function Unclaimed({ user }) {
                                                         <option value="Gcash">Gcash</option>
                                                         <option value="Palawan">Palawan</option>
                                                     </select>
+                                                    {user?.role?.toLowerCase() === 'cashier' && (
+                                                        <p className="text-xs text-emerald-600 font-medium">Cashiers can only add Cash items</p>
+                                                    )}
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-payment-type" className="text-xs font-semibold text-gray-700">Payment Type</label>
@@ -651,6 +759,57 @@ function Unclaimed({ user }) {
                                                         <option value="Partial Payment">Partial Payment</option>
                                                     </select>
                                                 </div>
+
+                                                {/* Reference Number - Show only for non-Cash modes */}
+                                                {formData.mode !== 'Cash' && (
+                                                    <div className="space-y-1">
+                                                        <label htmlFor="modal-reference" className="text-xs font-semibold text-gray-700">
+                                                            Reference Number {formData.mode && `(${formData.mode})`}
+                                                        </label>
+                                                        <input
+                                                            id="modal-reference"
+                                                            name="reference_number"
+                                                            type="text"
+                                                            value={formData.reference_number || ''}
+                                                            onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
+                                                            disabled={isCollectorEditMode}
+                                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                            placeholder="Enter reference number"
+                                                        />
+                                                        <p className="text-xs text-gray-500">Transaction reference from {formData.mode}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* Receipt Image Upload - Show only for non-Cash modes */}
+                                                {formData.mode !== 'Cash' && (
+                                                    <div className="space-y-1">
+                                                        <label htmlFor="modal-receipt-image" className="text-xs font-semibold text-gray-700">
+                                                            Receipt Image {formData.mode && `(${formData.mode})`}
+                                                        </label>
+                                                        <input
+                                                            id="modal-receipt-image"
+                                                            name="receipt_image"
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                const file = e.target.files[0]
+                                                                if (file) {
+                                                                    setFormData({ ...formData, receipt_image_file: file })
+                                                                }
+                                                            }}
+                                                            disabled={isCollectorEditMode}
+                                                            className="hidden"
+                                                        />
+                                                        <label
+                                                            htmlFor="modal-receipt-image"
+                                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all flex items-center justify-center gap-2 cursor-pointer ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50 hover:bg-gray-100'}`}
+                                                        >
+                                                            <ImageIcon className="w-4 h-4" />
+                                                            {formData.receipt_image_file ? formData.receipt_image_file.name : 'Upload receipt image'}
+                                                        </label>
+                                                        <p className="text-xs text-gray-500">Upload proof of {formData.mode} transaction</p>
+                                                    </div>
+                                                )}
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-status" className="text-xs font-semibold text-gray-700">Status</label>
                                                     <select
@@ -662,6 +821,7 @@ function Unclaimed({ user }) {
                                                         className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                     >
                                                         <option value="Unclaimed">Unclaimed</option>
+                                                        <option value="Uncollected">Uncollected (Pending Review)</option>
                                                         <option value="Collected">Collected</option>
                                                         <option value="Cancelled">Cancelled</option>
                                                     </select>
@@ -719,57 +879,6 @@ function Unclaimed({ user }) {
                                                         className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                     />
                                                 </div>
-                                                {/* Receipt Image Upload - Only show if mode is not Cash */}
-                                                {formData.mode !== 'Cash' && (
-                                                    <div className="space-y-1 md:col-span-2">
-                                                        <label htmlFor="modal-receipt" className="text-xs font-semibold text-gray-700">
-                                                            Transaction Receipt Image {formData.mode === 'Back Transfer' || formData.mode === 'Deposited' ? '(Required)' : '(Optional)'}
-                                                        </label>
-                                                        <div className="space-y-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <label
-                                                                    htmlFor="modal-receipt"
-                                                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-dashed border-indigo-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all"
-                                                                >
-                                                                    <Upload className="w-5 h-5 text-indigo-600" />
-                                                                    <span className="text-indigo-700 font-medium">
-                                                                        {formData.receipt_file ? formData.receipt_file.name : 'Choose receipt image'}
-                                                                    </span>
-                                                                </label>
-                                                                <input
-                                                                    id="modal-receipt"
-                                                                    name="receipt_image"
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => {
-                                                                        const file = e.target.files?.[0]
-                                                                        if (file) {
-                                                                            setFormData({ ...formData, receipt_file: file })
-                                                                        }
-                                                                    }}
-                                                                    className="hidden"
-                                                                />
-                                                            </div>
-                                                            {formData.receipt_image && !formData.receipt_file && (
-                                                                <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-                                                                    <ImageIcon className="w-4 h-4 text-green-600" />
-                                                                    <span className="text-xs text-green-700">Current receipt image uploaded</span>
-                                                                    <a
-                                                                        href={formData.receipt_image}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="ml-auto text-xs text-indigo-600 hover:text-indigo-800 underline"
-                                                                    >
-                                                                        View
-                                                                    </a>
-                                                                </div>
-                                                            )}
-                                                            <p className="text-xs text-gray-500">
-                                                                Upload a photo of the transaction receipt for {formData.mode} transactions
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                )}
                                             </div>
                                             <div className="pt-3 flex gap-3">
                                                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-all">
@@ -788,6 +897,7 @@ function Unclaimed({ user }) {
                 )
             }
 
+
             {/* Receipt Image Modal */}
             {showReceiptModal && (
                 <div
@@ -795,11 +905,11 @@ function Unclaimed({ user }) {
                     onClick={() => setShowReceiptModal(false)}
                 >
                     <div
-                        className="relative bg-white rounded-2xl shadow-2xl max-w-4xl max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200"
+                        className="relative bg-white rounded-2xl shadow-2xl max-w-lg max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
+                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between flex-shrink-0">
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 <ImageIcon className="w-6 h-6" />
                                 Transaction Receipt
@@ -813,22 +923,48 @@ function Unclaimed({ user }) {
                         </div>
 
                         {/* Image */}
-                        <div className="p-6 flex items-center justify-center bg-gray-50 min-h-[400px]">
-                            {receiptImageUrl ? (
-                                <img
-                                    src={receiptImageUrl}
-                                    alt="Transaction Receipt"
-                                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-lg"
-                                    onError={(e) => {
-                                        console.error('Failed to load receipt image:', receiptImageUrl)
-                                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
-                                    }}
-                                    onLoad={() => console.log('Receipt image loaded successfully:', receiptImageUrl)}
-                                />
-                            ) : (
-                                <div className="text-center">
-                                    <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                    <p className="text-gray-500">No receipt image available</p>
+                        <div className="p-4 bg-gray-50 overflow-y-auto flex-1">
+                            <div className="flex items-center justify-center mb-4">
+                                {receiptImageUrl ? (
+                                    <img
+                                        src={receiptImageUrl}
+                                        alt="Transaction Receipt"
+                                        className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"
+                                        onError={(e) => {
+                                            console.error('Failed to load receipt image:', receiptImageUrl)
+                                            e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
+                                        }}
+                                        onLoad={() => console.log('Receipt image loaded successfully:', receiptImageUrl)}
+                                    />
+                                ) : (
+                                    <div className="text-center">
+                                        <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                        <p className="text-gray-500">No receipt image available</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Mode and Reference Info */}
+                            {selectedReceiptItem && (
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                                            <p className="text-xs text-gray-500 mb-1">Payment Mode</p>
+                                            <p className="font-semibold text-gray-900">{selectedReceiptItem.mode || 'Cash'}</p>
+                                        </div>
+                                        {selectedReceiptItem.reference_number && (
+                                            <div className="bg-white p-3 rounded-lg border border-gray-200">
+                                                <p className="text-xs text-gray-500 mb-1">Reference #</p>
+                                                <p className="font-semibold text-gray-900">{selectedReceiptItem.reference_number}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                                        <p className="text-xs text-green-600 mb-1">Total Net Amount</p>
+                                        <p className="text-2xl font-bold text-green-700">
+                                            ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>

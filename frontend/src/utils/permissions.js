@@ -21,6 +21,10 @@ export const PERMISSIONS = {
 
     // Reports actions
     EXPORT_REPORTS: 'export_reports',
+
+    // Cashier permissions
+    DEPOSIT_CASH: 'deposit_cash',
+    VIEW_CASH_DEPOSITS: 'view_cash_deposits',
 }
 
 // Role-based permission mapping
@@ -75,6 +79,15 @@ const rolePermissions = {
         PERMISSIONS.VIEW_COLLECTIONS,
         PERMISSIONS.VIEW_REPORTS,
         PERMISSIONS.EXPORT_REPORTS,
+    ],
+    'cashier': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.DEPOSIT_CASH,
+        PERMISSIONS.VIEW_CASH_DEPOSITS,
+        PERMISSIONS.MARK_AS_COLLECTED, // Can mark as collected after deposit
     ],
 }
 

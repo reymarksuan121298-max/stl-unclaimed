@@ -21,7 +21,7 @@ function Dashboard({ user }) {
         try {
             setLoading(true)
             const [dashboardStats, unclaimed] = await Promise.all([
-                dataHelpers.getDashboardStats(),
+                dataHelpers.getDashboardStats(user),
                 dataHelpers.getUnclaimed({ status: 'Unclaimed' })
             ])
 

@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard'
 import Unclaimed from './pages/Unclaimed'
 import Pending from './pages/Pending'
 import Collections from './pages/Collections'
+import CashDeposits from './pages/CashDeposits'
 import Reports from './pages/Reports'
 import Users from './pages/Users'
 import { authHelpers } from './lib/supabase'
@@ -49,6 +50,7 @@ function App() {
     if (hasPermission(user, PERMISSIONS.VIEW_DASHBOARD)) return '/'
     if (hasPermission(user, PERMISSIONS.VIEW_UNCLAIMED)) return '/unclaimed'
     if (hasPermission(user, PERMISSIONS.VIEW_PENDING)) return '/pending'
+    if (hasPermission(user, PERMISSIONS.DEPOSIT_CASH)) return '/cash-deposits'
     if (hasPermission(user, PERMISSIONS.VIEW_COLLECTIONS)) return '/collections'
     if (hasPermission(user, PERMISSIONS.VIEW_REPORTS)) return '/reports'
     if (hasPermission(user, PERMISSIONS.VIEW_USERS)) return '/users'
@@ -74,6 +76,7 @@ function App() {
           } />
           <Route path="/unclaimed" element={<ProtectedRoute element={<Unclaimed user={user} />} permission={PERMISSIONS.VIEW_UNCLAIMED} />} />
           <Route path="/pending" element={<ProtectedRoute element={<Pending user={user} />} permission={PERMISSIONS.VIEW_PENDING} />} />
+          <Route path="/cash-deposits" element={<ProtectedRoute element={<CashDeposits user={user} />} permission={PERMISSIONS.VIEW_CASH_DEPOSITS} />} />
           <Route path="/collections" element={<ProtectedRoute element={<Collections user={user} />} permission={PERMISSIONS.VIEW_COLLECTIONS} />} />
           <Route path="/reports" element={<ProtectedRoute element={<Reports user={user} />} permission={PERMISSIONS.VIEW_REPORTS} />} />
           <Route path="/users" element={<ProtectedRoute element={<Users user={user} />} permission={PERMISSIONS.VIEW_USERS} />} />

@@ -141,7 +141,7 @@ function Users({ user }) {
     const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages))
     const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
-    const roles = ['admin', 'checker', 'general manager', 'specialist', 'collector', 'staff']
+    const roles = ['admin', 'cashier', 'checker', 'general manager', 'specialist', 'collector', 'staff']
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
     const statuses = ['active', 'inactive', 'suspended']
 
