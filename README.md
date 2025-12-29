@@ -40,6 +40,10 @@ The STL Unclaimed Collections System is a full-stack web application built to tr
 - ✅ **Audit Trail** - Complete tracking of all transactions
 - ✅ **Receipt Upload** - Photo documentation of deposits
 - ✅ **Real-time Dashboard** - Live statistics and summaries
+- ✅ **Bet Code Tracking** - Identify bet types (S3, L3, S2, 4D, 6D, STL)
+- ✅ **Reference Number Tracking** - Track transaction references for non-cash payments
+- ✅ **Receiver Contact Tracking** - Record mobile/account numbers for payments
+- ✅ **Created By Tracking** - Track which user created each record
 
 ### Cashier-Specific Features
 - 💰 **Batch Deposit** - Deposit all pending cash at once
@@ -85,6 +89,10 @@ database/supabase_schema.sql
 - ✅ Security fixes (search_path, RLS)
 - ✅ Views (Pending, PendingCashDeposits)
 - ✅ All triggers and functions
+- ✅ Bet code identification (S3, L3, S2, 4D, 6D, STL)
+- ✅ Reference number tracking for non-cash payments
+- ✅ Receiver contact/account number tracking
+- ✅ Created by user tracking
 
 #### 2. Create Storage Bucket
 1. Go to Supabase Storage
@@ -209,6 +217,7 @@ database/supabase_schema.sql
 id                  BIGINT PRIMARY KEY
 teller_name         TEXT
 bet_number          TEXT
+bet_code            TEXT  -- Bet type (S3, L3, S2, 4D, 6D, STL)
 draw_date           DATE
 bet_amount          NUMERIC(15, 2)
 win_amount          NUMERIC(15, 2)
@@ -222,6 +231,9 @@ collector           TEXT
 mode                TEXT  -- Cash, Back Transfer, Gcash, etc.
 payment_type        TEXT  -- Full Payment, Partial Payment
 receipt_image       TEXT
+reference_number    TEXT  -- Transaction reference for non-cash
+receiver_contact    TEXT  -- Mobile/account number of receiver
+created_by          TEXT  -- User who created this record
 cash_deposited      BOOLEAN
 deposit_date        TIMESTAMPTZ
 deposit_amount      DECIMAL(10, 2)
@@ -236,9 +248,10 @@ updated_at          TIMESTAMPTZ
 #### OverAllCollections Table
 ```sql
 id                  BIGINT PRIMARY KEY
-unclaimed_id        BIGINT (references Unclaimed)
+unclaimed_id        BIGINT UNIQUE (references Unclaimed)
 teller_name         TEXT
 bet_number          TEXT
+bet_code            TEXT  -- Bet type (S3, L3, S2, 4D, 6D, STL)
 draw_date           DATE
 return_date         TIMESTAMPTZ
 bet_amount          NUMERIC(15, 2)
@@ -251,6 +264,9 @@ area                TEXT
 mode                TEXT
 payment_type        TEXT
 receipt_image       TEXT
+reference_number    TEXT  -- Transaction reference for non-cash
+receiver_contact    TEXT  -- Mobile/account number of receiver
+created_by          TEXT  -- User who created this record
 cash_deposited      BOOLEAN
 deposit_date        TIMESTAMPTZ
 deposit_amount      DECIMAL(10, 2)
@@ -441,6 +457,16 @@ For issues or questions:
 
 ## 📝 Version History
 
+**Version 1.3** - December 29, 2024
+- ✅ Bet code tracking (S3, L3, S2, 4D, 6D, STL)
+- ✅ Reference number tracking for non-cash payments
+- ✅ Receiver contact/account number tracking
+- ✅ Created by user tracking
+- ✅ Unique constraint on OverAllCollections.unclaimed_id
+- ✅ Consolidated all migrations into supabase_schema.sql
+- ✅ Enhanced receipt modals with new fields
+- ✅ Improved data integrity and audit trail
+
 **Version 1.2** - December 27, 2024
 - ✅ Cashier role fully implemented
 - ✅ Batch deposit only (no individual deposits)
@@ -469,4 +495,4 @@ Proprietary - All rights reserved
 ---
 
 **Status**: ✅ Production Ready  
-**Last Updated**: December 27, 2024
+**Last Updated**: December 29, 2024

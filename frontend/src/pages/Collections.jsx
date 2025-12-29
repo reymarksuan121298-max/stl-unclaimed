@@ -150,6 +150,7 @@ function Collections({ user }) {
                             <tr>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Agent Name</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Number</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Code</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Draw Date</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Return Timestamp</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Amt</th>
@@ -159,13 +160,14 @@ function Collections({ user }) {
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Mode</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Payment</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Collector</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Created By</th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Area</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="12" className="px-6 py-12 text-center">
+                                    <td colSpan="14" className="px-6 py-12 text-center">
                                         <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No collections found</p>
                                     </td>
@@ -177,6 +179,11 @@ function Collections({ user }) {
                                             <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.bet_number || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                                                {item.bet_code || 'N/A'}
+                                            </span>
+                                        </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                                             {new Date(item.draw_date).toLocaleDateString()}
                                         </td>
@@ -232,6 +239,7 @@ function Collections({ user }) {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.collector || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.created_by || 'N/A'}</td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
                                     </tr>
                                 ))
@@ -355,13 +363,13 @@ function Collections({ user }) {
                         </div>
 
                         {/* Image */}
-                        <div className="p-4 bg-gray-50 overflow-y-auto flex-1">
-                            <div className="flex items-center justify-center mb-4">
+                        <div className="p-3 bg-gray-50 overflow-y-auto flex-1">
+                            <div className="flex items-center justify-center mb-3">
                                 {receiptImageUrl ? (
                                     <img
                                         src={receiptImageUrl}
                                         alt="Transaction Receipt"
-                                        className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"
+                                        className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg"
                                         onError={(e) => {
                                             console.error('Failed to load receipt image:', receiptImageUrl)
                                             e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
@@ -378,24 +386,47 @@ function Collections({ user }) {
 
                             {/* Mode and Reference Info */}
                             {selectedReceiptItem && (
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                        <div className="bg-white p-3 rounded-lg border border-gray-200">
-                                            <p className="text-xs text-gray-500 mb-1">Payment Mode</p>
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div className="bg-white p-2 rounded border border-gray-200">
+                                            <p className="text-[10px] text-gray-500 mb-0.5">Payment Mode</p>
                                             <p className="font-semibold text-gray-900">{selectedReceiptItem.mode || 'Cash'}</p>
                                         </div>
-                                        {selectedReceiptItem.reference_number && (
-                                            <div className="bg-white p-3 rounded-lg border border-gray-200">
-                                                <p className="text-xs text-gray-500 mb-1">Reference #</p>
-                                                <p className="font-semibold text-gray-900">{selectedReceiptItem.reference_number}</p>
-                                            </div>
+                                        {selectedReceiptItem.mode !== 'Cash' ? (
+                                            <>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Reference #</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.reference_number || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Receiver Contact</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.receiver_contact || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-green-50 p-2 rounded border border-green-200 col-span-2">
+                                                    <p className="text-[10px] text-green-600 mb-0.5">Total Net Amount</p>
+                                                    <p className="text-lg font-bold text-green-700">
+                                                        ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                    </p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Bank</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.bank_name || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Deposit Reference</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.deposit_reference || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-green-50 p-2 rounded border border-green-200 col-span-2">
+                                                    <p className="text-[10px] text-green-600 mb-0.5">Total Net Amount</p>
+                                                    <p className="text-lg font-bold text-green-700">
+                                                        ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                    </p>
+                                                </div>
+                                            </>
                                         )}
-                                    </div>
-                                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                                        <p className="text-xs text-green-600 mb-1">Total Net Amount</p>
-                                        <p className="text-2xl font-bold text-green-700">
-                                            ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                        </p>
                                     </div>
                                 </div>
                             )}

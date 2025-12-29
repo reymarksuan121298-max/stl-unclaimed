@@ -144,6 +144,7 @@ function Unclaimed({ user }) {
             setFormData({
                 teller_name: item.teller_name,
                 bet_number: item.bet_number,
+                bet_code: item.bet_code || '',
                 draw_date: item.draw_date,
                 bet_amount: item.bet_amount || '',
                 win_amount: item.win_amount,
@@ -156,13 +157,16 @@ function Unclaimed({ user }) {
                 return_date: formattedReturnDate,
                 status: item.status || 'Unclaimed',
                 receipt_image: item.receipt_image || '',
-                receipt_file: null
+                receipt_file: null,
+                reference_number: item.reference_number || '',
+                receiver_contact: item.receiver_contact || ''
             })
         } else {
             setEditingItem(null)
             setFormData({
                 teller_name: '',
                 bet_number: '',
+                bet_code: '',
                 draw_date: '',
                 bet_amount: '',
                 win_amount: '',
@@ -175,7 +179,9 @@ function Unclaimed({ user }) {
                 return_date: '',
                 status: 'Unclaimed',
                 receipt_image: '',
-                receipt_file: null
+                receipt_file: null,
+                reference_number: '',
+                receiver_contact: ''
             })
         }
         setShowModal(true)
@@ -211,7 +217,9 @@ function Unclaimed({ user }) {
                 return_date: returnDateValue,
                 receipt_image: receiptImageUrl || null,
                 // Automatically set collector if user is a collector
-                collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : formData.collector
+                collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : formData.collector,
+                // Track who created this item (only set on creation, not update)
+                ...(editingItem ? {} : { created_by: user?.fullname || user?.username || 'Unknown' })
             }
 
             // Remove file objects from payload as they're not database fields
@@ -383,6 +391,7 @@ function Unclaimed({ user }) {
                             <tr>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Agent</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet #</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Code</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Draw Date</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Return Timestamp</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Bet Amt</th>
@@ -393,6 +402,7 @@ function Unclaimed({ user }) {
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Franchise</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Area</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Collector</th>
+                                <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Created By</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Status</th>
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase whitespace-nowrap">Actions</th>
                             </tr>
@@ -400,7 +410,7 @@ function Unclaimed({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="14" className="px-6 py-12 text-center">
+                                    <td colSpan="16" className="px-6 py-12 text-center">
                                         <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No unclaimed items found</p>
                                     </td>
@@ -412,6 +422,11 @@ function Unclaimed({ user }) {
                                             <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.bet_number || 'N/A'}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
+                                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                                                {item.bet_code || 'N/A'}
+                                            </span>
+                                        </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                                             {new Date(item.draw_date).toLocaleDateString()}
                                         </td>
@@ -464,6 +479,7 @@ function Unclaimed({ user }) {
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.franchise_name || 'N/A'}</td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.collector || 'N/A'}</td>
+                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.created_by || 'N/A'}</td>
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             {(() => {
                                                 // For cashiers, show "Collected" when status is "Uncollected"
@@ -652,6 +668,26 @@ function Unclaimed({ user }) {
                                                     />
                                                 </div>
                                                 <div className="space-y-1">
+                                                    <label htmlFor="modal-bet-code" className="text-xs font-semibold text-gray-700">Bet Code</label>
+                                                    <select
+                                                        id="modal-bet-code"
+                                                        name="bet_code"
+                                                        value={formData.bet_code || ''}
+                                                        onChange={(e) => setFormData({ ...formData, bet_code: e.target.value })}
+                                                        disabled={isCollectorEditMode}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        <option value="">Select Bet Code</option>
+                                                        <option value="S3">S3 - Swertres</option>
+                                                        <option value="L3">L3 - Lucky 3</option>
+                                                        <option value="S2">S2 - Swertres 2</option>
+                                                        <option value="4D">4D - 4 Digit</option>
+                                                        <option value="6D">6D - 6 Digit</option>
+                                                        <option value="STL">STL - Small Town Lottery</option>
+                                                    </select>
+                                                    <p className="text-xs text-gray-500">Type of bet (S3, L3, S2, 4D, etc.)</p>
+                                                </div>
+                                                <div className="space-y-1">
                                                     <label htmlFor="modal-draw-date" className="text-xs font-semibold text-gray-700">Draw Date</label>
                                                     <input
                                                         id="modal-draw-date"
@@ -762,22 +798,40 @@ function Unclaimed({ user }) {
 
                                                 {/* Reference Number - Show only for non-Cash modes */}
                                                 {formData.mode !== 'Cash' && (
-                                                    <div className="space-y-1">
-                                                        <label htmlFor="modal-reference" className="text-xs font-semibold text-gray-700">
-                                                            Reference Number {formData.mode && `(${formData.mode})`}
-                                                        </label>
-                                                        <input
-                                                            id="modal-reference"
-                                                            name="reference_number"
-                                                            type="text"
-                                                            value={formData.reference_number || ''}
-                                                            onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
-                                                            disabled={isCollectorEditMode}
-                                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
-                                                            placeholder="Enter reference number"
-                                                        />
-                                                        <p className="text-xs text-gray-500">Transaction reference from {formData.mode}</p>
-                                                    </div>
+                                                    <>
+                                                        <div className="space-y-1">
+                                                            <label htmlFor="modal-reference" className="text-xs font-semibold text-gray-700">
+                                                                Reference Number {formData.mode && `(${formData.mode})`}
+                                                            </label>
+                                                            <input
+                                                                id="modal-reference"
+                                                                name="reference_number"
+                                                                type="text"
+                                                                value={formData.reference_number || ''}
+                                                                onChange={(e) => setFormData({ ...formData, reference_number: e.target.value })}
+                                                                disabled={isCollectorEditMode}
+                                                                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                                placeholder="Enter reference number"
+                                                            />
+                                                            <p className="text-xs text-gray-500">Transaction reference from {formData.mode}</p>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label htmlFor="modal-receiver-contact" className="text-xs font-semibold text-gray-700">
+                                                                Receiver Mobile Number
+                                                            </label>
+                                                            <input
+                                                                id="modal-receiver-contact"
+                                                                name="receiver_contact"
+                                                                type="tel"
+                                                                value={formData.receiver_contact || ''}
+                                                                onChange={(e) => setFormData({ ...formData, receiver_contact: e.target.value })}
+                                                                disabled={isCollectorEditMode}
+                                                                className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                                placeholder="09XXXXXXXXX"
+                                                            />
+                                                            <p className="text-xs text-gray-500">Mobile number of {formData.mode} receiver</p>
+                                                        </div>
+                                                    </>
                                                 )}
 
                                                 {/* Receipt Image Upload - Show only for non-Cash modes */}
@@ -923,13 +977,13 @@ function Unclaimed({ user }) {
                         </div>
 
                         {/* Image */}
-                        <div className="p-4 bg-gray-50 overflow-y-auto flex-1">
-                            <div className="flex items-center justify-center mb-4">
+                        <div className="p-3 bg-gray-50 overflow-y-auto flex-1">
+                            <div className="flex items-center justify-center mb-3">
                                 {receiptImageUrl ? (
                                     <img
                                         src={receiptImageUrl}
                                         alt="Transaction Receipt"
-                                        className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-lg"
+                                        className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg"
                                         onError={(e) => {
                                             console.error('Failed to load receipt image:', receiptImageUrl)
                                             e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EImage not available%3C/text%3E%3C/svg%3E'
@@ -946,24 +1000,47 @@ function Unclaimed({ user }) {
 
                             {/* Mode and Reference Info */}
                             {selectedReceiptItem && (
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-3 text-sm">
-                                        <div className="bg-white p-3 rounded-lg border border-gray-200">
-                                            <p className="text-xs text-gray-500 mb-1">Payment Mode</p>
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        <div className="bg-white p-2 rounded border border-gray-200">
+                                            <p className="text-[10px] text-gray-500 mb-0.5">Payment Mode</p>
                                             <p className="font-semibold text-gray-900">{selectedReceiptItem.mode || 'Cash'}</p>
                                         </div>
-                                        {selectedReceiptItem.reference_number && (
-                                            <div className="bg-white p-3 rounded-lg border border-gray-200">
-                                                <p className="text-xs text-gray-500 mb-1">Reference #</p>
-                                                <p className="font-semibold text-gray-900">{selectedReceiptItem.reference_number}</p>
-                                            </div>
+                                        {selectedReceiptItem.mode !== 'Cash' ? (
+                                            <>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Reference #</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.reference_number || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Receiver Contact</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.receiver_contact || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-green-50 p-2 rounded border border-green-200 col-span-2">
+                                                    <p className="text-[10px] text-green-600 mb-0.5">Total Net Amount</p>
+                                                    <p className="text-lg font-bold text-green-700">
+                                                        ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                    </p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Bank</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.bank_name || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Deposit Reference</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.deposit_reference || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-green-50 p-2 rounded border border-green-200 col-span-2">
+                                                    <p className="text-[10px] text-green-600 mb-0.5">Total Net Amount</p>
+                                                    <p className="text-lg font-bold text-green-700">
+                                                        ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                    </p>
+                                                </div>
+                                            </>
                                         )}
-                                    </div>
-                                    <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                                        <p className="text-xs text-green-600 mb-1">Total Net Amount</p>
-                                        <p className="text-2xl font-bold text-green-700">
-                                            ₱{parseFloat(selectedReceiptItem.net || selectedReceiptItem.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                        </p>
                                     </div>
                                 </div>
                             )}

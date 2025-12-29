@@ -646,13 +646,13 @@ function CashDeposits({ user }) {
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <div className="p-4 overflow-y-auto flex-1">
-                            <div className="bg-gray-100 rounded-xl overflow-hidden mb-4 flex items-center justify-center border border-gray-200 shadow-inner">
+                        <div className="p-3 overflow-y-auto flex-1">
+                            <div className="bg-gray-100 rounded-lg overflow-hidden mb-3 flex items-center justify-center">
                                 {receiptImageUrl ? (
                                     <img
                                         src={receiptImageUrl}
                                         alt="Deposit Receipt"
-                                        className="max-w-full max-h-[50vh] object-contain"
+                                        className="max-w-full max-h-[60vh] object-contain"
                                         onError={(e) => {
                                             e.target.onerror = null;
                                             e.target.src = 'https://via.placeholder.com/400x600?text=Image+Not+Found';
@@ -666,22 +666,47 @@ function CashDeposits({ user }) {
                                 )}
                             </div>
 
-                            <div className="space-y-3">
-                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                        <p className="text-xs text-gray-500 mb-1">Bank</p>
-                                        <p className="font-semibold text-gray-800">{selectedItem?.bank_name || 'N/A'}</p>
+                            <div className="space-y-2">
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="p-2 bg-white rounded border border-gray-200">
+                                        <p className="text-[10px] text-gray-500 mb-0.5">Payment Mode</p>
+                                        <p className="font-semibold text-gray-800">{selectedItem?.mode || 'N/A'}</p>
                                     </div>
-                                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                        <p className="text-xs text-gray-500 mb-1">Reference #</p>
-                                        <p className="font-semibold text-gray-800">{selectedItem?.deposit_reference || 'N/A'}</p>
-                                    </div>
-                                </div>
-                                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-                                    <p className="text-xs text-emerald-600 mb-1">Total Net Amount</p>
-                                    <p className="text-xl font-bold text-emerald-700">
-                                        ₱{parseFloat(selectedItem?.net || selectedItem?.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                    </p>
+                                    {selectedItem?.mode !== 'Cash' ? (
+                                        <>
+                                            <div className="p-2 bg-white rounded border border-gray-200">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">Reference #</p>
+                                                <p className="font-semibold text-gray-800">{selectedItem?.reference_number || 'N/A'}</p>
+                                            </div>
+                                            <div className="p-2 bg-white rounded border border-gray-200">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">Account Number</p>
+                                                <p className="font-semibold text-gray-800">{selectedItem?.receiver_contact || 'N/A'}</p>
+                                            </div>
+                                            <div className="p-2 bg-emerald-50 rounded border border-emerald-200 col-span-2">
+                                                <p className="text-[10px] text-emerald-600 mb-0.5">Total Net Amount</p>
+                                                <p className="text-lg font-bold text-emerald-700">
+                                                    ₱{parseFloat(selectedItem?.net || selectedItem?.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="p-2 bg-white rounded border border-gray-200">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">Bank</p>
+                                                <p className="font-semibold text-gray-800">{selectedItem?.bank_name || 'N/A'}</p>
+                                            </div>
+                                            <div className="p-2 bg-white rounded border border-gray-200">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">Deposit Reference</p>
+                                                <p className="font-semibold text-gray-800">{selectedItem?.deposit_reference || 'N/A'}</p>
+                                            </div>
+                                            <div className="p-2 bg-emerald-50 rounded border border-emerald-200 col-span-2">
+                                                <p className="text-[10px] text-emerald-600 mb-0.5">Total Net Amount</p>
+                                                <p className="text-lg font-bold text-emerald-700">
+                                                    ₱{parseFloat(selectedItem?.net || selectedItem?.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
