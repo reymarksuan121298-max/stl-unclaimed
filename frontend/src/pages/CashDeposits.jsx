@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Wallet, Search, Filter, Upload, Image as ImageIcon, X, Check, DollarSign } from 'lucide-react'
+import { Wallet, Search, Filter, Upload, Image as ImageIcon, X, Check, DollarSign, Download, ArrowLeft } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 import { hasPermission, PERMISSIONS } from '../utils/permissions'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 
 function CashDeposits({ user }) {
     const [items, setItems] = useState([])
@@ -163,6 +165,60 @@ function CashDeposits({ user }) {
     const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
 
+    const handleExportExcel = async () => {
+        if (filteredItems.length === 0) {
+            alert('No data to export.')
+            return
+        }
+
+        const workbook = new ExcelJS.Workbook()
+        const worksheet = workbook.addWorksheet('CashDeposits')
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'Agent Name', key: 'teller_name', width: 20 },
+            { header: 'Bet Number', key: 'bet_number', width: 15 },
+            { header: 'Draw Date', key: 'draw_date', width: 15 },
+            { header: 'Collected Date', key: 'return_date', width: 20 },
+            { header: 'Win Amount', key: 'win_amount', width: 15 },
+            { header: 'Net Amount', key: 'net_amount', width: 15 },
+            { header: 'Collector', key: 'collector', width: 15 },
+            { header: 'Area', key: 'area', width: 15 },
+            { header: 'Status', key: 'status', width: 12 },
+            { header: 'Bank', key: 'bank_name', width: 15 },
+            { header: 'Deposit Reference', key: 'deposit_reference', width: 20 }
+        ]
+
+        // Add rows
+        filteredItems.forEach(item => {
+            worksheet.addRow({
+                teller_name: item.teller_name,
+                bet_number: item.bet_number || 'N/A',
+                draw_date: new Date(item.draw_date).toLocaleDateString(),
+                return_date: item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A',
+                win_amount: parseFloat(item.win_amount || 0),
+                net_amount: parseFloat(item.net || item.win_amount || 0),
+                collector: item.collector || 'N/A',
+                area: item.area || 'N/A',
+                status: item.cash_deposited ? 'Deposited' : 'Pending',
+                bank_name: item.bank_name || 'N/A',
+                deposit_reference: item.deposit_reference || 'N/A'
+            })
+        })
+
+        // Bold the header row
+        worksheet.getRow(1).font = { bold: true }
+
+        // Formatting for numbers
+        worksheet.getColumn('win_amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('net_amount').numFmt = '₱#,##0.00'
+
+        // File name and save
+        let filename = `Cash_Deposits_Report_${new Date().toISOString().split('T')[0]}.xlsx`
+        const buffer = await workbook.xlsx.writeBuffer()
+        saveAs(new Blob([buffer]), filename)
+    }
+
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
     const banks = ['BDO', 'BPI', 'Metrobank', 'Landbank', 'PNB', 'UnionBank', 'Security Bank', 'RCBC']
 
@@ -187,10 +243,19 @@ function CashDeposits({ user }) {
         <div className="p-6 md:p-8 space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <Wallet className="w-8 h-8 text-emerald-600" />
-                    Cash Deposits
-                </h1>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <Wallet className="w-8 h-8 text-emerald-600" />
+                        Cash Deposits
+                    </h1>
+                    <button
+                        onClick={handleExportExcel}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transform transition-all duration-200"
+                    >
+                        <Download className="w-5 h-5" />
+                        Export to Excel
+                    </button>
+                </div>
                 <p className="text-gray-600 mt-1">Manage cash collections and bank deposits</p>
             </div>
 
@@ -339,22 +404,19 @@ function CashDeposits({ user }) {
                                             {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="font-semibold text-blue-600 text-xs">
+                                            <span className="font-medium text-gray-900 text-xs">
                                                 ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="font-bold text-emerald-600 text-xs">
+                                            <span className="font-bold text-gray-900 text-xs">
                                                 ₱{parseFloat(item.net || item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.collector || 'N/A'}</td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.cash_deposited
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-orange-100 text-orange-800'
-                                                }`}>
+                                            <span className="text-xs text-gray-900 font-medium">
                                                 {item.cash_deposited ? 'Deposited' : 'Pending'}
                                             </span>
                                         </td>

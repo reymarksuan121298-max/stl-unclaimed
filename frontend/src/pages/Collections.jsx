@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { DollarSign, Search, Filter, TrendingUp, Image as ImageIcon, X } from 'lucide-react'
+import { DollarSign, Search, Filter, TrendingUp, Image as ImageIcon, X, Download } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 
 function Collections({ user }) {
     const [items, setItems] = useState([])
@@ -52,6 +54,73 @@ function Collections({ user }) {
         return matchesSearch && matchesCashierFilter
     })
 
+    const handleExportExcel = async () => {
+        if (filteredItems.length === 0) {
+            alert('No data to export.')
+            return
+        }
+
+        const workbook = new ExcelJS.Workbook()
+        const worksheet = workbook.addWorksheet('Collections')
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'Agent Name', key: 'teller_name', width: 20 },
+            { header: 'Bet Number', key: 'bet_number', width: 15 },
+            { header: 'Bet Code', key: 'bet_code', width: 10 },
+            { header: 'Draw Date', key: 'draw_date', width: 15 },
+            { header: 'Return Timestamp', key: 'return_date', width: 20 },
+            { header: 'Bet Amt', key: 'bet_amount', width: 12 },
+            { header: 'Win Amount', key: 'amount', width: 12 },
+            { header: 'Charge', key: 'charge_amount', width: 12 },
+            { header: 'Net Amount', key: 'net', width: 12 },
+            { header: 'Payment Mode', key: 'mode', width: 15 },
+            { header: 'Payment Status', key: 'payment_type', width: 15 },
+            { header: 'Collector', key: 'collector', width: 15 },
+            { header: 'Created By', key: 'created_by', width: 15 },
+            { header: 'Area', key: 'area', width: 15 }
+        ]
+
+        // Add rows
+        filteredItems.forEach(item => {
+            worksheet.addRow({
+                teller_name: item.teller_name,
+                bet_number: item.bet_number || 'N/A',
+                bet_code: item.bet_code || 'N/A',
+                draw_date: new Date(item.draw_date).toLocaleDateString(),
+                return_date: item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A',
+                bet_amount: parseFloat(item.bet_amount || 0),
+                amount: parseFloat(item.amount || item.win_amount || 0),
+                charge_amount: parseFloat(item.charge_amount || 0),
+                net: parseFloat(item.net || 0),
+                mode: item.mode || 'N/A',
+                payment_type: item.payment_type === 'Full Payment' ? 'Full' : item.payment_type === 'Partial Payment' ? 'Partial' : 'N/A',
+                collector: item.collector || 'N/A',
+                created_by: item.created_by || 'N/A',
+                area: item.area || 'N/A'
+            })
+        })
+
+        // Bold the header row
+        worksheet.getRow(1).font = { bold: true }
+
+        // Formatting for numbers
+        worksheet.getColumn('bet_amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('charge_amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('net').numFmt = '₱#,##0.00'
+
+        // Build filename based on filters
+        let filename = 'Collections_Report'
+        if (filterFranchise) filename += `_${filterFranchise.replace(/\s+/g, '_')}`
+        if (filterCollector) filename += `_${filterCollector.replace(/\s+/g, '_')}`
+        filename += `_${new Date().toISOString().split('T')[0]}.xlsx`
+
+        // Write and save
+        const buffer = await workbook.xlsx.writeBuffer()
+        saveAs(new Blob([buffer]), filename)
+    }
+
     // Pagination calculations
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
     const indexOfLastItem = currentPage * itemsPerPage
@@ -80,10 +149,19 @@ function Collections({ user }) {
         <div className="p-6 md:p-8 space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                    <DollarSign className="w-8 h-8 text-green-600" />
-                    Collections
-                </h1>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <DollarSign className="w-8 h-8 text-green-600" />
+                        Collections
+                    </h1>
+                    <button
+                        onClick={handleExportExcel}
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transform transition-all duration-200"
+                    >
+                        <Download className="w-5 h-5" />
+                        Export to Excel
+                    </button>
+                </div>
                 <p className="text-gray-600 mt-1">All collected winnings across franchises</p>
             </div>
 
@@ -179,10 +257,8 @@ function Collections({ user }) {
                                             <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.bet_number || 'N/A'}</td>
-                                        <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
-                                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
-                                                {item.bet_code || 'N/A'}
-                                            </span>
+                                        <td className="px-4 py-3 text-xs text-gray-900 whitespace-nowrap">
+                                            {item.bet_code || 'N/A'}
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
                                             {new Date(item.draw_date).toLocaleDateString()}
@@ -191,22 +267,22 @@ function Collections({ user }) {
                                             {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="font-semibold text-purple-600 text-xs">
+                                            <span className="font-medium text-gray-900 text-xs">
                                                 ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="font-semibold text-blue-600 text-xs">
+                                            <span className="font-medium text-gray-900 text-xs">
                                                 ₱{parseFloat(item.amount || item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="text-xs text-red-600">
+                                            <span className="text-xs text-gray-900">
                                                 ₱{parseFloat(item.charge_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className="font-bold text-green-600 text-xs">
+                                            <span className="font-bold text-gray-900 text-xs">
                                                 ₱{parseFloat(item.net || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
@@ -230,13 +306,8 @@ function Collections({ user }) {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 whitespace-nowrap">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.payment_type === 'Full Payment'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-orange-100 text-orange-800'
-                                                }`}>
-                                                {item.payment_type === 'Full Payment' ? 'Full' : item.payment_type === 'Partial Payment' ? 'Partial' : 'N/A'}
-                                            </span>
+                                        <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-900">
+                                            {item.payment_type === 'Full Payment' ? 'Full' : item.payment_type === 'Partial Payment' ? 'Partial' : 'N/A'}
                                         </td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.collector || 'N/A'}</td>
                                         <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">{item.created_by || 'N/A'}</td>

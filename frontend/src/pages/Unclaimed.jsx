@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Package, Search, Plus, Trash2, Check, Filter, X, Edit, Upload, Image as ImageIcon } from 'lucide-react'
+import { Package, Search, Plus, Trash2, Check, Filter, X, Edit, Upload, Image as ImageIcon, Download } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 import { hasPermission, PERMISSIONS, canPerformAction } from '../utils/permissions'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 
 function Unclaimed({ user }) {
     const [items, setItems] = useState([])
@@ -81,6 +83,77 @@ function Unclaimed({ user }) {
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleExportExcel = async () => {
+        if (filteredItems.length === 0) {
+            alert('No data to export.')
+            return
+        }
+
+        const workbook = new ExcelJS.Workbook()
+        const worksheet = workbook.addWorksheet('Unclaimed')
+
+        // Define columns
+        worksheet.columns = [
+            { header: 'Agent Name', key: 'teller_name', width: 20 },
+            { header: 'Bet Number', key: 'bet_number', width: 15 },
+            { header: 'Bet Code', key: 'bet_code', width: 10 },
+            { header: 'Draw Date', key: 'draw_date', width: 15 },
+            { header: 'Return Timestamp', key: 'return_date', width: 20 },
+            { header: 'Bet Amt', key: 'bet_amount', width: 12 },
+            { header: 'Win Amount', key: 'win_amount', width: 12 },
+            { header: 'Charge', key: 'charge_amount', width: 12 },
+            { header: 'Net Amount', key: 'net', width: 12 },
+            { header: 'Payment Mode', key: 'mode', width: 15 },
+            { header: 'Payment Status', key: 'payment_status', width: 15 },
+            { header: 'Franchise', key: 'franchise_name', width: 20 },
+            { header: 'Collector', key: 'collector', width: 15 },
+            { header: 'Created By', key: 'created_by', width: 15 },
+            { header: 'Status', key: 'status', width: 15 },
+            { header: 'Area', key: 'area', width: 15 }
+        ]
+
+        // Add rows
+        filteredItems.forEach(item => {
+            worksheet.addRow({
+                teller_name: item.teller_name,
+                bet_number: item.bet_number || 'N/A',
+                bet_code: item.bet_code || 'N/A',
+                draw_date: new Date(item.draw_date).toLocaleDateString(),
+                return_date: item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A',
+                bet_amount: parseFloat(item.bet_amount || 0),
+                win_amount: parseFloat(item.win_amount || 0),
+                charge_amount: parseFloat(item.charge_amount || 0),
+                net: parseFloat(item.net || item.win_amount - (item.charge_amount || 0)),
+                mode: item.mode || 'N/A',
+                payment_status: item.payment_type === 'Full Payment' ? 'Full' : 'Partial',
+                franchise_name: item.franchise_name || 'N/A',
+                collector: item.collector || 'N/A',
+                created_by: item.created_by || 'N/A',
+                status: item.status || 'N/A',
+                area: item.area || 'N/A'
+            })
+        })
+
+        // Bold the header row
+        worksheet.getRow(1).font = { bold: true }
+
+        // Formatting for numbers
+        worksheet.getColumn('bet_amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('win_amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('charge_amount').numFmt = '₱#,##0.00'
+        worksheet.getColumn('net').numFmt = '₱#,##0.00'
+
+        // Build filename based on filters
+        let filename = 'Unclaimed_Report'
+        if (filterFranchise) filename += `_${filterFranchise.replace(/\s+/g, '_')}`
+        if (filterStatus) filename += `_${filterStatus}`
+        filename += `_${new Date().toISOString().split('T')[0]}.xlsx`
+
+        // Write and save
+        const buffer = await workbook.xlsx.writeBuffer()
+        saveAs(new Blob([buffer]), filename)
     }
 
     const handleMarkAsCollected = async (id) => {
@@ -297,15 +370,24 @@ function Unclaimed({ user }) {
                     </h1>
                     <p className="text-gray-600 mt-1">Manage all unclaimed winnings</p>
                 </div>
-                {hasPermission(user, PERMISSIONS.CREATE_UNCLAIMED) && (
+                <div className="flex flex-wrap gap-2">
                     <button
-                        onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                        onClick={handleExportExcel}
+                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                     >
-                        <Plus className="w-5 h-5" />
-                        Add Unclaimed Item
+                        <Download className="w-5 h-5" />
+                        Export
                     </button>
-                )}
+                    {hasPermission(user, PERMISSIONS.CREATE_UNCLAIMED) && (
+                        <button
+                            onClick={() => handleOpenModal()}
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                        >
+                            <Plus className="w-5 h-5" />
+                            Add Unclaimed Item
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filters */}
@@ -422,10 +504,8 @@ function Unclaimed({ user }) {
                                             <div className="font-medium text-gray-900 text-xs">{item.teller_name}</div>
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.bet_number || 'N/A'}</td>
-                                        <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
-                                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
-                                                {item.bet_code || 'N/A'}
-                                            </span>
+                                        <td className="px-3 py-2 text-xs text-gray-900 whitespace-nowrap">
+                                            {item.bet_code || 'N/A'}
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">
                                             {new Date(item.draw_date).toLocaleDateString()}
@@ -434,17 +514,17 @@ function Unclaimed({ user }) {
                                             {item.return_date ? new Date(item.return_date).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' }) : 'N/A'}
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
-                                            <span className="font-semibold text-blue-600 text-xs">
+                                            <span className="font-medium text-gray-900 text-xs">
                                                 ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
-                                            <span className="font-semibold text-green-600 text-xs">
+                                            <span className="font-medium text-gray-900 text-xs">
                                                 ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
                                         <td className="px-3 py-2 whitespace-nowrap">
-                                            <span className="text-xs text-red-600">
+                                            <span className="text-xs text-gray-900">
                                                 ₱{parseFloat(item.charge_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </span>
                                         </td>
@@ -468,13 +548,8 @@ function Unclaimed({ user }) {
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2 whitespace-nowrap">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.payment_type === 'Full Payment'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-orange-100 text-orange-800'
-                                                }`}>
-                                                {item.payment_type === 'Full Payment' ? 'Full' : 'Partial'}
-                                            </span>
+                                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900">
+                                            {item.payment_type === 'Full Payment' ? 'Full' : 'Partial'}
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.franchise_name || 'N/A'}</td>
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.area || 'N/A'}</td>
@@ -488,14 +563,7 @@ function Unclaimed({ user }) {
                                                     : item.status;
 
                                                 return (
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Unclaimed'
-                                                        ? 'bg-yellow-100 text-yellow-800'
-                                                        : item.status === 'Uncollected'
-                                                            ? 'bg-orange-100 text-orange-800'
-                                                            : item.status === 'Collected'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-gray-100 text-gray-800'
-                                                        }`}>
+                                                    <span className="text-xs text-gray-900 font-medium">
                                                         {displayStatus}
                                                     </span>
                                                 );
