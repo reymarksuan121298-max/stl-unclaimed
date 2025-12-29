@@ -699,14 +699,15 @@ function CashDeposits({ user }) {
                                                 <p className="text-[10px] text-gray-500 mb-0.5">Deposit Reference</p>
                                                 <p className="font-semibold text-gray-800">{selectedItem?.deposit_reference || 'N/A'}</p>
                                             </div>
-                                            <div className="p-2 bg-emerald-50 rounded border border-emerald-200 col-span-2">
-                                                <p className="text-[10px] text-emerald-600 mb-0.5">Total Net Amount</p>
-                                                <p className="text-lg font-bold text-emerald-700">
-                                                    ₱{parseFloat(selectedItem?.net || selectedItem?.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                                </p>
-                                            </div>
                                         </>
                                     )}
+                                    {/* Total Net Amount - Always shown at the bottom */}
+                                    <div className="p-2 bg-emerald-50 rounded border border-emerald-200 col-span-2">
+                                        <p className="text-[10px] text-emerald-600 mb-0.5">Total Net Amount</p>
+                                        <p className="text-lg font-bold text-emerald-700">
+                                            ₱{parseFloat(selectedItem?.net || selectedItem?.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
