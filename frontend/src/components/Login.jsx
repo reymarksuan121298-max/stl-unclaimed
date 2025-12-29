@@ -65,9 +65,66 @@ function Login({ onLogin }) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Sakura Leaves Falling Animation */}
+            <style>{`
+                @keyframes sakuraFall {
+                    0% {
+                        transform: translateY(-100px) translateX(0) rotate(0deg);
+                        opacity: 1;
+                    }
+                    25% {
+                        transform: translateY(25vh) translateX(20px) rotate(90deg);
+                    }
+                    50% {
+                        transform: translateY(50vh) translateX(-20px) rotate(180deg);
+                    }
+                    75% {
+                        transform: translateY(75vh) translateX(20px) rotate(270deg);
+                    }
+                    100% {
+                        transform: translateY(100vh) translateX(0) rotate(360deg);
+                        opacity: 0.5;
+                    }
+                }
+
+                .sakura {
+                    position: absolute;
+                    width: 15px;
+                    height: 15px;
+                    background: radial-gradient(circle at 30% 30%, #ffb7d5, #ff9ec5);
+                    border-radius: 0 100% 0 100%;
+                    animation: sakuraFall linear infinite;
+                    opacity: 0.9;
+                    box-shadow: 0 2px 8px rgba(255, 105, 180, 0.3);
+                }
+                .sakura::before {
+                    content: '';
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    background: radial-gradient(circle at 30% 30%, #ffc9e0, #ffaad5);
+                    border-radius: 100% 0 100% 0;
+                    transform: rotate(90deg);
+                }
+            `}</style>
             {/* Animated background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {/* Generate 20 sakura leaves with random properties */}
+                {[...Array(20)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="sakura"
+                        style={{
+                            left: `${Math.random() * 100}%`,
+                            animationDuration: `${8 + Math.random() * 10}s, ${2 + Math.random() * 2}s`,
+                            animationDelay: `${Math.random() * 5}s, ${Math.random() * 2}s`,
+                            width: `${15 + Math.random() * 10}px`,
+                            height: `${15 + Math.random() * 10}px`,
+                        }}
+                    />
+                ))}
+                {/* Ambient glow effects */}
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
             </div>
