@@ -214,6 +214,7 @@ export const dataHelpers = {
                 deposit_receipt: depositData.deposit_receipt,
                 cashier_name: cashierName,
                 bank_name: depositData.bank_name,
+                receiver_contact: depositData.receiver_contact,
                 deposit_reference: depositData.deposit_reference
             })
             .eq('id', id)
