@@ -19,6 +19,7 @@ function CashDeposits({ user }) {
         deposit_amount: '',
         total_charges: '',
         bank_name: '',
+        receiver_contact: '',
         deposit_reference: '',
         deposit_receipt_file: null
     })
@@ -81,6 +82,7 @@ function CashDeposits({ user }) {
             const depositData = {
                 deposit_amount: depositFormData.deposit_amount,
                 bank_name: depositFormData.bank_name,
+                receiver_contact: depositFormData.receiver_contact,
                 deposit_reference: depositFormData.deposit_reference,
                 deposit_receipt: depositReceiptUrl
             }
@@ -464,30 +466,30 @@ function CashDeposits({ user }) {
             {/* Deposit Modal */}
             {showDepositModal && selectedItem && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-                        <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-between sticky top-0 z-10">
-                            <h2 className="text-xl font-bold">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200">
+                        <div className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-between">
+                            <h2 className="text-lg font-bold">
                                 {selectedItem === 'ALL' ? 'Deposit All Cash Collections' : 'Record Cash Deposit'}
                             </h2>
                             <button onClick={() => setShowDepositModal(false)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <form onSubmit={handleDepositSubmit} className="p-6 space-y-4">
+                        <form onSubmit={handleDepositSubmit} className="p-4 space-y-3">
                             {/* Item Details */}
-                            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-2">
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 space-y-1.5">
                                 {selectedItem === 'ALL' ? (
                                     <>
-                                        <h3 className="font-semibold text-emerald-900">Batch Deposit Summary</h3>
+                                        <h3 className="text-sm font-semibold text-emerald-900">Batch Deposit Summary</h3>
                                         <div className="grid grid-cols-2 gap-2 text-sm">
                                             <div><span className="text-gray-600">Total Items:</span> <span className="font-bold text-emerald-700">{pendingItems.length}</span></div>
                                             <div><span className="text-gray-600">Total Amount:</span> <span className="font-bold text-blue-600">₱{pendingItems.reduce((sum, item) => sum + parseFloat(item.win_amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></div>
                                             <div><span className="text-gray-600">Total Charges:</span> <span className="font-bold text-red-600">₱{(parseFloat(depositFormData.total_charges) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></div>
                                             <div><span className="text-gray-600">Net Amount:</span> <span className="font-bold text-emerald-700">₱{(parseFloat(depositFormData.deposit_amount) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span></div>
                                         </div>
-                                        <div className="mt-3 p-3 bg-white rounded-lg border border-emerald-200">
+                                        <div className="mt-2 p-2 bg-white rounded-lg border border-emerald-200">
                                             <p className="text-xs text-gray-600 mb-2 font-semibold">Items included in this deposit:</p>
-                                            <div className="max-h-32 overflow-y-auto space-y-1">
+                                            <div className="max-h-24 overflow-y-auto space-y-0.5">
                                                 {pendingItems.map((item, index) => (
                                                     <div key={item.id} className="text-xs text-gray-700 flex justify-between">
                                                         <span>{index + 1}. {item.teller_name || 'N/A'} ({item.bet_number})</span>
@@ -499,7 +501,7 @@ function CashDeposits({ user }) {
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="font-semibold text-emerald-900">Collection Details</h3>
+                                        <h3 className="text-sm font-semibold text-emerald-900">Collection Details</h3>
                                         <div className="grid grid-cols-2 gap-2 text-sm">
                                             <div><span className="text-gray-600">Agent:</span> <span className="font-medium">{selectedItem.teller_name}</span></div>
                                             <div><span className="text-gray-600">Bet #:</span> <span className="font-medium">{selectedItem.bet_number}</span></div>
@@ -513,7 +515,7 @@ function CashDeposits({ user }) {
                             </div>
 
                             {/* Deposit Form */}
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {selectedItem === 'ALL' && (
                                     <div className="space-y-1">
                                         <label htmlFor="total-charges" className="text-sm font-semibold text-gray-700">Total Charges</label>
@@ -574,6 +576,21 @@ function CashDeposits({ user }) {
                                         <option value="">Select Bank</option>
                                         {banks.map(bank => <option key={bank} value={bank}>{bank}</option>)}
                                     </select>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label htmlFor="account-number" className="text-sm font-semibold text-gray-700">Bank Account Number *</label>
+                                    <input
+                                        id="account-number"
+                                        name="receiver_contact"
+                                        type="text"
+                                        required
+                                        value={depositFormData.receiver_contact}
+                                        onChange={(e) => setDepositFormData({ ...depositFormData, receiver_contact: e.target.value })}
+                                        className="w-full px-4 py-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none transition-all bg-gray-50"
+                                        placeholder="Enter bank account number"
+                                    />
+                                    <p className="text-xs text-gray-500">Account number where cash was deposited</p>
                                 </div>
 
                                 <div className="space-y-1">
@@ -696,6 +713,10 @@ function CashDeposits({ user }) {
                                                 <p className="font-semibold text-gray-800">{selectedItem?.bank_name || 'N/A'}</p>
                                             </div>
                                             <div className="p-2 bg-white rounded border border-gray-200">
+                                                <p className="text-[10px] text-gray-500 mb-0.5">Account Number</p>
+                                                <p className="font-semibold text-gray-800">{selectedItem?.receiver_contact || 'N/A'}</p>
+                                            </div>
+                                            <div className="p-2 bg-white rounded border border-gray-200 col-span-2">
                                                 <p className="text-[10px] text-gray-500 mb-0.5">Deposit Reference</p>
                                                 <p className="font-semibold text-gray-800">{selectedItem?.deposit_reference || 'N/A'}</p>
                                             </div>

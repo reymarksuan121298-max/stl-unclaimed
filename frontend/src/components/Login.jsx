@@ -85,7 +85,7 @@ function Login({ onLogin }) {
                         <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
                             Welcome Back
                         </h1>
-                        <p className="text-white/90 drop-shadow">Sign in to STL Unclaimed</p>
+                        <p className="text-white/90 drop-shadow">Sign in to Unclaimed Dashboard</p>
                     </div>
 
                     {/* Error Message */}
