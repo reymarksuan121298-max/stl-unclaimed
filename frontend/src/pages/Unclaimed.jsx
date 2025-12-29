@@ -1030,6 +1030,10 @@ function Unclaimed({ user }) {
                                                     <p className="font-semibold text-gray-900">{selectedReceiptItem.bank_name || 'N/A'}</p>
                                                 </div>
                                                 <div className="bg-white p-2 rounded border border-gray-200">
+                                                    <p className="text-[10px] text-gray-500 mb-0.5">Account Number</p>
+                                                    <p className="font-semibold text-gray-900">{selectedReceiptItem.receiver_contact || 'N/A'}</p>
+                                                </div>
+                                                <div className="bg-white p-2 rounded border border-gray-200 col-span-2">
                                                     <p className="text-[10px] text-gray-500 mb-0.5">Deposit Reference</p>
                                                     <p className="font-semibold text-gray-900">{selectedReceiptItem.deposit_reference || 'N/A'}</p>
                                                 </div>
