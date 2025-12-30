@@ -493,6 +493,33 @@ BEGIN
 END $$;
 
 -- ============================================================================
+-- DATA BACKFILLS AND MIGRATIONS
+-- ============================================================================
+
+-- Fix distribution percentages in Reports table
+UPDATE "Reports"
+SET 
+    staff_amount = amount * 0.10,
+    collector_amount = amount * 0.10,
+    agent_amount = amount * 0.30,
+    admin_amount = amount * 0.50;
+
+-- Backfill bet_code from Unclaimed to OverAllCollections
+UPDATE "OverAllCollections" oc
+SET bet_code = u.bet_code
+FROM "Unclaimed" u
+WHERE oc.unclaimed_id = u.id
+  AND u.bet_code IS NOT NULL
+  AND (oc.bet_code IS NULL OR oc.bet_code = '');
+
+-- Backfill receiver_contact for existing cash deposits (optional if running for first time)
+-- Note: New deposits automatically save this, this is for historical data
+UPDATE "Unclaimed"
+SET receiver_contact = COALESCE(receiver_contact, 'Legacy Deposit')
+WHERE cash_deposited = true 
+  AND (receiver_contact IS NULL OR receiver_contact = '');
+
+-- ============================================================================
 -- COMPLETION MESSAGE
 -- ============================================================================
 
