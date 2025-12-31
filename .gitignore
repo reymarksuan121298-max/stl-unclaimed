@@ -45,3 +45,6 @@ Thumbs.db
 .cache/
 .vercel
 .env*.local
+
+.vercel
+.env*.local
