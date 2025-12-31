@@ -168,7 +168,7 @@ CREATE INDEX IF NOT EXISTS idx_collections_unclaimed_id ON "OverAllCollections"(
 -- VIEWS
 -- ============================================================================
 
--- Pending View - Items overdue by more than 3 days
+-- Pending View - Items overdue by more than 3 days (Collector role only)
 DROP VIEW IF EXISTS "Pending";
 CREATE VIEW "Pending" 
 WITH (security_invoker = true) AS
@@ -185,7 +185,9 @@ SELECT
     EXTRACT(DAY FROM (NOW() - draw_date::timestamp))::integer AS days_overdue
 FROM "Unclaimed"
 WHERE status = 'Unclaimed'
-AND (NOW() - draw_date::timestamp) > INTERVAL '3 days';
+AND (NOW() - draw_date::timestamp) > INTERVAL '3 days'
+AND collector IS NOT NULL 
+AND collector != '';
 
 -- PendingCashDeposits View - Collected cash items awaiting deposit
 DROP VIEW IF EXISTS "PendingCashDeposits";

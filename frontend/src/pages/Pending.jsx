@@ -164,21 +164,22 @@ function Pending({ user }) {
                     <table className="w-full">
                         <thead className="bg-gradient-to-r from-orange-50 to-red-50">
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Agent Name</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Number</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Draw Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Return Date</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Days Overdue</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Teller Name</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Trans. ID</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Draw Time/Date</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet No.</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Code</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Amount</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Win Amount</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Franchise</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Category</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Notification</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="9" className="px-6 py-12 text-center">
+                                    <td colSpan="10" className="px-6 py-12 text-center">
                                         <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No pending items found</p>
                                     </td>
@@ -191,28 +192,39 @@ function Pending({ user }) {
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-gray-900">{item.teller_name}</div>
                                             </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">#{item.id}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                {new Date(item.draw_date).toLocaleString('en-PH', {
+                                                    year: 'numeric',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                })}
+                                            </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {new Date(item.draw_date).toLocaleDateString()}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {item.return_date ? new Date(item.return_date).toLocaleDateString() : 'N/A'}
-                                            </td>
                                             <td className="px-6 py-4">
-                                                <span className="font-bold text-red-600 text-lg">
-                                                    {item.days_overdue || 0} days
+                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                                                    {item.bet_code || 'N/A'}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span className="font-semibold text-green-600">
                                                     ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{item.franchise_name || 'N/A'}</td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
                                             <td className="px-6 py-4">
+                                                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                                                    Unclaimed
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${category.color}`}>
-                                                    {category.label}
+                                                    {item.days_overdue || 0} days overdue
                                                 </span>
                                             </td>
                                         </tr>
