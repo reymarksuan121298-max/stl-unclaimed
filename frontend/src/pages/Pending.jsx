@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Clock, Search, Filter, AlertTriangle } from 'lucide-react'
+import { Clock, Search, Filter, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
+import { googleSheetsHelpers } from '../lib/googleSheets'
 
 function Pending({ user }) {
     const [items, setItems] = useState([])
@@ -19,6 +20,38 @@ function Pending({ user }) {
         setCurrentPage(1) // Reset to first page when search/filter changes
     }, [searchTerm, filterFranchise, filterCollector])
 
+    const handleDelete = async (item) => {
+        // Validate item has proper data
+        if (!item.teller_name || !item.bet_number || item.teller_name === 'Teller' || item.bet_number === 'Bet No.') {
+            alert('Cannot delete invalid or header row')
+            return
+        }
+
+        const confirmMessage = `Are you sure you want to remove this pending item?\n\nTeller: ${item.teller_name}\nBet Number: ${item.bet_number}\nWin Amount: ₱${parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}\n\nThis action cannot be undone.`
+
+        if (!confirm(confirmMessage)) {
+            return
+        }
+
+        try {
+            // If item is from Google Sheets, delete from Google Sheets
+            if (item.source === 'google_sheets') {
+                await googleSheetsHelpers.deletePendingFromSheets(item.trans_id)
+                alert('Item removed from Google Sheets successfully!')
+                loadPending() // Reload the list
+                return
+            }
+
+            // Delete from Supabase
+            await dataHelpers.deleteUnclaimed(item.id)
+            alert('Item removed successfully!')
+            loadPending() // Reload the list
+        } catch (error) {
+            console.error('Error deleting item:', error)
+            alert('Error removing item: ' + error.message)
+        }
+    }
+
     const loadPending = async () => {
         try {
             setLoading(true)
@@ -31,8 +64,39 @@ function Pending({ user }) {
                 filters.collector = user.fullname
             }
 
-            const data = await dataHelpers.getPending(filters)
-            setItems(data)
+            // Fetch from both sources in parallel
+            const [supabaseData, sheetsData] = await Promise.allSettled([
+                dataHelpers.getPending(filters),
+                googleSheetsHelpers.getPendingFromSheets()
+            ])
+
+            // Process Supabase data
+            let allItems = []
+            if (supabaseData.status === 'fulfilled') {
+                allItems = [...supabaseData.value]
+            } else {
+                console.error('Error loading from Supabase:', supabaseData.reason)
+            }
+
+            // Process Google Sheets data
+            if (sheetsData.status === 'fulfilled') {
+                // Filter sheets data if needed
+                let filteredSheetsData = sheetsData.value
+
+                if (filters.collector) {
+                    filteredSheetsData = filteredSheetsData.filter(
+                        item => item.collector === filters.collector
+                    )
+                }
+
+                // Merge with Supabase data
+                allItems = [...allItems, ...filteredSheetsData]
+            } else {
+                console.warn('Could not load from Google Sheets:', sheetsData.reason?.message)
+                // Continue with Supabase data only
+            }
+
+            setItems(allItems)
         } catch (error) {
             console.error('Error loading pending:', error)
             console.error('Error details:', error.message, error)
@@ -42,10 +106,16 @@ function Pending({ user }) {
         }
     }
 
-    const filteredItems = items.filter(item =>
-        item.teller_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.bet_number?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredItems = items.filter(item => {
+        const search = searchTerm.toLowerCase()
+        const tellerName = (item.teller_name || '').toLowerCase()
+        const betNumber = String(item.bet_number || '').toLowerCase()
+        const collector = (item.collector || '').toLowerCase()
+
+        return tellerName.includes(search) ||
+            betNumber.includes(search) ||
+            collector.includes(search)
+    })
 
     // Pagination calculations
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
@@ -86,8 +156,16 @@ function Pending({ user }) {
                         <Clock className="w-8 h-8 text-orange-600" />
                         Pending Items
                     </h1>
-                    <p className="text-gray-600 mt-1">Items overdue by more than 3 days</p>
+                    <p className="text-gray-600 mt-1">Items overdue by more than 3 days (from Supabase & Google Sheets)</p>
                 </div>
+                <button
+                    onClick={loadPending}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-xl hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                    Refresh Data
+                </button>
             </div>
 
             {/* Alert Banner */}
@@ -162,10 +240,23 @@ function Pending({ user }) {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
+                        {/* Collector Name Header Row */}
+                        {user?.role?.toLowerCase() === 'collector' && user?.fullname && (
+                            <thead>
+                                <tr>
+                                    <th colSpan="10" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-left">
+                                        <span className="text-xl font-bold text-white uppercase tracking-wide">
+                                            {user.fullname}
+                                        </span>
+                                    </th>
+                                </tr>
+                            </thead>
+                        )}
+
                         <thead className="bg-gradient-to-r from-orange-50 to-red-50">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Teller Name</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Trans. ID</th>
+
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Draw Time/Date</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet No.</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Code</th>
@@ -174,6 +265,7 @@ function Pending({ user }) {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Notification</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -192,15 +284,8 @@ function Pending({ user }) {
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-gray-900">{item.teller_name}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">#{item.id}</td>
                                             <td className="px-6 py-4 text-sm text-gray-600">
-                                                {new Date(item.draw_date).toLocaleString('en-PH', {
-                                                    year: 'numeric',
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
+                                                {item.draw_date || 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
                                             <td className="px-6 py-4">
@@ -226,6 +311,15 @@ function Pending({ user }) {
                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${category.color}`}>
                                                     {item.days_overdue || 0} days overdue
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <button
+                                                    onClick={() => handleDelete(item)}
+                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Remove (Returned to Cashier)"
+                                                >
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
                                             </td>
                                         </tr>
                                     )
