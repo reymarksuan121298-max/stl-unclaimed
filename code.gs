@@ -17,7 +17,7 @@
  */
 
 const CONFIG = {
-    SHEET_NAME: 'Lotto Pending List',
+    SHEET_NAME: 'OverAllPending',
     HEADER_ROW: 1,
     DATA_START_ROW: 2,
 

@@ -279,8 +279,9 @@ function Pending({ user }) {
                             ) : (
                                 currentItems.map((item) => {
                                     const category = getOverdueCategory(item.days_overdue || 0)
+                                    const isOverdue = item.days_overdue >= 3
                                     return (
-                                        <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                                        <tr key={item.id} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-gray-900">{item.teller_name}</div>
                                             </td>
@@ -303,14 +304,23 @@ function Pending({ user }) {
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
                                             <td className="px-6 py-4">
-                                                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                                    Unclaimed
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
+                                                    item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
+                                                        'bg-yellow-100 text-yellow-800'
+                                                    }`}>
+                                                    {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${category.color}`}>
-                                                    {item.days_overdue || 0} days overdue
-                                                </span>
+                                                {item.days_overdue >= 3 ? (
+                                                    <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-bold animate-pulse">
+                                                        For Deactivation
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                                                        Warning ({item.days_overdue} days)
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <button
@@ -327,74 +337,76 @@ function Pending({ user }) {
                             )}
                         </tbody>
                     </table>
-                </div>
+                </div >
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                        <div className="text-sm text-gray-600">
-                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredItems.length)} of {filteredItems.length} items
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={prevPage}
-                                disabled={currentPage === 1}
-                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === 1
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    }`}
-                            >
-                                Previous
-                            </button>
-
-                            <div className="flex gap-1">
-                                {[...Array(totalPages)].map((_, index) => {
-                                    const pageNumber = index + 1
-                                    // Show first page, last page, current page, and pages around current
-                                    if (
-                                        pageNumber === 1 ||
-                                        pageNumber === totalPages ||
-                                        (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                                    ) {
-                                        return (
-                                            <button
-                                                key={pageNumber}
-                                                onClick={() => paginate(pageNumber)}
-                                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === pageNumber
-                                                    ? 'bg-orange-600 text-white'
-                                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                                    }`}
-                                            >
-                                                {pageNumber}
-                                            </button>
-                                        )
-                                    } else if (
-                                        pageNumber === currentPage - 2 ||
-                                        pageNumber === currentPage + 2
-                                    ) {
-                                        return <span key={pageNumber} className="px-2 text-gray-400">...</span>
-                                    }
-                                    return null
-                                })}
+                {
+                    totalPages > 1 && (
+                        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                                Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredItems.length)} of {filteredItems.length} items
                             </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={prevPage}
+                                    disabled={currentPage === 1}
+                                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === 1
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    Previous
+                                </button>
 
-                            <button
-                                onClick={nextPage}
-                                disabled={currentPage === totalPages}
-                                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === totalPages
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                    }`}
-                            >
-                                Next
-                            </button>
+                                <div className="flex gap-1">
+                                    {[...Array(totalPages)].map((_, index) => {
+                                        const pageNumber = index + 1
+                                        // Show first page, last page, current page, and pages around current
+                                        if (
+                                            pageNumber === 1 ||
+                                            pageNumber === totalPages ||
+                                            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                        ) {
+                                            return (
+                                                <button
+                                                    key={pageNumber}
+                                                    onClick={() => paginate(pageNumber)}
+                                                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === pageNumber
+                                                        ? 'bg-orange-600 text-white'
+                                                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                                        }`}
+                                                >
+                                                    {pageNumber}
+                                                </button>
+                                            )
+                                        } else if (
+                                            pageNumber === currentPage - 2 ||
+                                            pageNumber === currentPage + 2
+                                        ) {
+                                            return <span key={pageNumber} className="px-2 text-gray-400">...</span>
+                                        }
+                                        return null
+                                    })}
+                                </div>
+
+                                <button
+                                    onClick={nextPage}
+                                    disabled={currentPage === totalPages}
+                                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === totalPages
+                                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )
+                }
+            </div >
 
             {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            < div className="grid grid-cols-1 md:grid-cols-4 gap-6" >
                 <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl shadow-lg p-6 text-white">
                     <p className="text-yellow-100 text-sm mb-1">Recently Overdue</p>
                     <p className="text-3xl font-bold">
@@ -419,8 +431,8 @@ function Pending({ user }) {
                         ₱{filteredItems.reduce((sum, item) => sum + parseFloat(item.win_amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                     </p>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
 

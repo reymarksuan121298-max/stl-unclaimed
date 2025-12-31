@@ -212,13 +212,44 @@ function calculateDaysOverdue(drawDate) {
     if (!drawDate) return 0
 
     try {
-        const draw = new Date(drawDate)
-        const now = new Date()
-        const diffTime = now - draw
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+        // Expected format: "5PM 2025-12-23" or "10:30AM 2025-12-06"
+        let finalDate = new Date();
 
-        // Only count as overdue if more than 3 days
-        return Math.max(0, diffDays - 3)
+        if (typeof drawDate === 'string' && drawDate.includes(' ')) {
+            const parts = drawDate.split(' ');
+            const timePart = parts[0].toUpperCase(); // "5PM" or "10:30AM"
+            const datePart = parts[1]; // "2025-12-23"
+
+            const [year, month, day] = datePart.split('-').map(Number);
+
+            // Parse time
+            let hour = 0;
+            let minute = 0;
+            const isPM = timePart.endsWith('PM');
+            const isAM = timePart.endsWith('AM');
+            const timeDigits = timePart.replace(/[AP]M/, '');
+
+            if (timeDigits.includes(':')) {
+                const [h, m] = timeDigits.split(':').map(Number);
+                hour = h;
+                minute = m;
+            } else {
+                hour = Number(timeDigits);
+            }
+
+            if (isPM && hour < 12) hour += 12;
+            if (isAM && hour === 12) hour = 0;
+
+            finalDate = new Date(year, month - 1, day, hour, minute);
+        } else {
+            finalDate = new Date(drawDate);
+        }
+
+        const now = new Date();
+        const diffTime = now - finalDate;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24); // Use float for precision
+
+        return Math.floor(diffDays);
     } catch (error) {
         console.error('Error calculating days overdue:', error)
         return 0
