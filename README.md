@@ -52,15 +52,16 @@ The **STL Unclaimed Collections System** is a production-ready web application d
 ### Advanced Features
 
 - 🎨 **Overdue Highlighting** - Items 3+ days past draw date highlighted in red
-- 📄 **Pagination** - All tables support pagination (10-50 items per page)
-- 🖼️ **Receipt Modals** - View receipts in-app without opening new tabs
-- 🔐 **Collector Filtering** - Collectors see only their assigned items
+- 📄 **Pagination** - All tables support pagination (10 items per page default)
+- 🖼️ **Receipt Modals** - Modern, compact, and scrollable receipt viewing in-app
+- 🔐 **Collector Filtering** - Collectors see only their assigned items; Admin/Specialist see grouped views
 - 📱 **Responsive Design** - Mobile-friendly interface with slide-out sidebar
 - 🏦 **Bank Integration** - Track bank names, reference numbers, and deposit dates
 - 📊 **Bet Code Tracking** - Automatic identification of bet types (S3, L3, S2, 4D, 6D, STL)
 - 💳 **Payment Tracking** - Reference numbers and receiver contact info for non-cash payments
 - 👤 **Audit Trail** - Track which user created/modified each record
-- 📤 **Excel Export** - Export data to Excel for offline analysis
+- 📤 **Excel Export** - Professional Excel export for all pages with bold headers and currency formatting
+- 📈 **Commission Distribution** - Automated 10/10/30/50 split (Staff/Collector/Agent/Admin)
 
 ---
 
@@ -113,7 +114,12 @@ The **STL Unclaimed Collections System** is a production-ready web application d
 - Auto-populated collector name (read-only)
 - See only items assigned to them in Pending view
 - Upload transaction receipts
-- Limited edit permissions (receipt upload only)
+- Access restricted to Pending and Collections (own only)
+
+**Specialist & Admin Roles**
+- Grouped Pending view (by Collector)
+- Full commission breakdown (10/10/30/50)
+- Advanced data export capabilities
 
 ---
 
@@ -154,6 +160,7 @@ The **STL Unclaimed Collections System** is a production-ready web application d
 
 4. **Add Initial Admin User**
    ```sql
+   -- Passwords are plain text for simplified management
    INSERT INTO "Users" (username, password, fullname, role, status)
    VALUES ('admin', 'admin123', 'System Administrator', 'admin', 'active');
    ```
@@ -787,17 +794,27 @@ WHERE a.id < b.id
 
 ## 📝 Version History
 
-### Version 2.0 - December 31, 2024 🎉
+### Version 2.5 - January 2, 2026 🎉
+**New Year Update: Advanced Reporting & UI Refinement**
+
+- ✅ **Grouped Pending View** - Admin and Specialists now see items grouped by Collector with cyan/blue headers.
+- ✅ **Commission Distribution** - Implemented 10/10/30/50 automated breakdown in Reports.
+- ✅ **Fixed Pagination** - Standardized to 10 items per page across all tables for better readability.
+- ✅ **Reference Numbers** - Added reference number field to Unclaimed CRUD for non-cash payments.
+- ✅ **Receipt Modal UI** - Enhanced receipt modals to be more compact, scrollable, and mobile-friendly.
+- ✅ **Security Update** - Transitioned to plain text password management as requested for easier administration.
+- ✅ **Bug Fixes** - Fixed login autocomplete issues and collector-specific filtering logic.
+
+### Version 2.0 - December 31, 2024
 **Major Update: Enhanced UX & Performance**
 
 - ✅ **Overdue Highlighting** - Items 3+ days past draw date highlighted in red
-- ✅ **Pagination** - All tables support 10-50 items per page
+- ✅ **Pagination** - All tables support pagination
 - ✅ **Receipt Modals** - View receipts in-app without new tabs
 - ✅ **Collector Filtering** - Collectors see only their assigned items in Pending
 - ✅ **Mobile Responsive** - Improved mobile layout with slide-out sidebar
 - ✅ **Excel Export** - Export data to Excel with ExcelJS
 - ✅ **Vercel Deployment** - Production deployment on Vercel
-- ✅ **Performance Optimization** - Faster page loads and smoother animations
 
 ### Version 1.3 - December 29, 2024
 **Enhanced Data Tracking**
