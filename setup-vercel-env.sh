@@ -1,0 +1,27 @@
+#!/bin/bash
+# Script to add environment variables to Vercel
+# Run this script to set up your environment variables
+
+echo "Setting up Vercel Environment Variables..."
+echo ""
+echo "You need to add the following environment variables to Vercel:"
+echo ""
+echo "1. VITE_SUPABASE_URL"
+echo "2. VITE_SUPABASE_ANON_KEY"
+echo "3. VITE_GOOGLE_SCRIPT_URL_1 (optional)"
+echo ""
+echo "You can add them using the Vercel CLI or dashboard:"
+echo ""
+echo "Option 1: Using Vercel CLI (recommended)"
+echo "Run these commands one by one:"
+echo ""
+echo "vercel env add VITE_SUPABASE_URL production"
+echo "vercel env add VITE_SUPABASE_ANON_KEY production"
+echo "vercel env add VITE_GOOGLE_SCRIPT_URL_1 production"
+echo ""
+echo "Option 2: Using Vercel Dashboard"
+echo "1. Go to https://vercel.com/reymarksuan121298-maxs-projects/stl-unclaimed/settings/environment-variables"
+echo "2. Add each variable manually"
+echo ""
+echo "After adding the variables, redeploy with:"
+echo "vercel --prod"
