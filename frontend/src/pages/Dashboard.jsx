@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Package, Clock, DollarSign, FileText, TrendingUp, Users } from 'lucide-react'
+import { Package, Clock, DollarSign, FileText, TrendingUp, Users, AlertTriangle } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
+import { googleSheetsHelpers } from '../lib/googleSheets'
 
 function Dashboard({ user }) {
     const [stats, setStats] = useState({
         totalUnclaimed: 0,
         totalPending: 0,
+        totalPendingFromSheets: 0,
         totalCollections: 0,
         totalRevenue: 0,
         totalReports: 0
     })
     const [loading, setLoading] = useState(true)
     const [recentUnclaimed, setRecentUnclaimed] = useState([])
+    const [recentPending, setRecentPending] = useState([])
 
     useEffect(() => {
         loadDashboardData()
@@ -20,13 +23,44 @@ function Dashboard({ user }) {
     const loadDashboardData = async () => {
         try {
             setLoading(true)
-            const [dashboardStats, unclaimed] = await Promise.all([
+
+            // Fetch from both Supabase and Google Sheets in parallel
+            const [dashboardStats, unclaimed, pendingFromSupabase, pendingFromSheets] = await Promise.allSettled([
                 dataHelpers.getDashboardStats(user),
-                dataHelpers.getUnclaimed({ status: 'Unclaimed' })
+                dataHelpers.getUnclaimed({ status: 'Unclaimed' }),
+                dataHelpers.getPending({}),
+                googleSheetsHelpers.getPendingFromSheets()
             ])
 
-            setStats(dashboardStats)
-            setRecentUnclaimed(unclaimed.slice(0, 5))
+            // Process Supabase stats
+            if (dashboardStats.status === 'fulfilled') {
+                setStats(prev => ({ ...prev, ...dashboardStats.value }))
+            }
+
+            // Process unclaimed items
+            if (unclaimed.status === 'fulfilled') {
+                setRecentUnclaimed(unclaimed.value.slice(0, 5))
+            }
+
+            // Process pending items from both sources
+            let allPendingItems = []
+
+            if (pendingFromSupabase.status === 'fulfilled') {
+                allPendingItems = [...pendingFromSupabase.value]
+            }
+
+            if (pendingFromSheets.status === 'fulfilled') {
+                const sheetsData = pendingFromSheets.value
+                setStats(prev => ({ ...prev, totalPendingFromSheets: sheetsData.length }))
+                allPendingItems = [...allPendingItems, ...sheetsData]
+            } else {
+                console.warn('Could not load pending from Google Sheets:', pendingFromSheets.reason?.message)
+            }
+
+            // Sort by days overdue (descending) and take top 5
+            allPendingItems.sort((a, b) => (b.days_overdue || 0) - (a.days_overdue || 0))
+            setRecentPending(allPendingItems.slice(0, 5))
+
         } catch (error) {
             console.error('Error loading dashboard:', error)
         } finally {
@@ -45,7 +79,7 @@ function Dashboard({ user }) {
         },
         {
             name: 'Pending Items',
-            value: stats.totalPending,
+            value: stats.totalPendingFromSheets,
             icon: Clock,
             color: 'from-orange-500 to-orange-600',
             bgColor: 'bg-orange-50',
@@ -175,6 +209,112 @@ function Dashboard({ user }) {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
                                                 {item.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Recent Pending Items (from Google Sheets & Supabase) */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-red-50">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                                Recent Pending Items
+                            </h2>
+                            <p className="text-sm text-gray-600 mt-1">Top 5 most overdue items (from all sources)</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">
+                                Database
+                            </span>
+                            <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">
+                                Google Sheets
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Source
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Teller Name
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Bet Number
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Draw Date
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Win Amount
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Collector
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                    Days Overdue
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {recentPending.length === 0 ? (
+                                <tr>
+                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                        <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                        <p>No pending items found</p>
+                                    </td>
+                                </tr>
+                            ) : (
+                                recentPending.map((item, index) => (
+                                    <tr
+                                        key={`${item.source}-${item.id}-${index}`}
+                                        className={`hover:bg-gray-50 transition-colors ${item.days_overdue >= 7 ? 'bg-red-50' :
+                                            item.days_overdue >= 5 ? 'bg-orange-50' : ''
+                                            }`}
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.source === 'google_sheets'
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                {item.source === 'google_sheets' ? 'Sheets' : 'DB'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="font-medium text-gray-900">{item.teller_name}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {item.bet_number || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {item.draw_date || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="font-semibold text-green-600">
+                                                ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {item.collector || 'N/A'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${item.days_overdue >= 7 ? 'bg-red-600 text-white animate-pulse' :
+                                                item.days_overdue >= 5 ? 'bg-orange-500 text-white' :
+                                                    item.days_overdue >= 3 ? 'bg-yellow-500 text-white' :
+                                                        'bg-gray-200 text-gray-700'
+                                                }`}>
+                                                {item.days_overdue} days
                                             </span>
                                         </td>
                                     </tr>

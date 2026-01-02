@@ -117,21 +117,21 @@ function Pending({ user }) {
             collector.includes(search)
     })
 
-    // Group items by collector for admin and specialist views
+    // Pagination calculations - do this BEFORE grouping
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
+    const indexOfLastItem = currentPage * itemsPerPage
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage
+    const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
+
+    // Group ONLY the current page items by collector for admin and specialist views
     const groupedByCollector = {}
-    filteredItems.forEach(item => {
+    currentItems.forEach(item => {
         const collectorName = item.collector || 'Unassigned'
         if (!groupedByCollector[collectorName]) {
             groupedByCollector[collectorName] = []
         }
         groupedByCollector[collectorName].push(item)
     })
-
-    // Pagination calculations
-    const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
-    const indexOfLastItem = currentPage * itemsPerPage
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage
-    const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber)
     const nextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages))
