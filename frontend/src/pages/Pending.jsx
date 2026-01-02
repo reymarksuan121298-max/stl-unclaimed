@@ -117,6 +117,16 @@ function Pending({ user }) {
             collector.includes(search)
     })
 
+    // Group items by collector for admin and specialist views
+    const groupedByCollector = {}
+    filteredItems.forEach(item => {
+        const collectorName = item.collector || 'Unassigned'
+        if (!groupedByCollector[collectorName]) {
+            groupedByCollector[collectorName] = []
+        }
+        groupedByCollector[collectorName].push(item)
+    })
+
     // Pagination calculations
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
     const indexOfLastItem = currentPage * itemsPerPage
@@ -156,7 +166,12 @@ function Pending({ user }) {
                         <Clock className="w-8 h-8 text-orange-600" />
                         Pending Items
                     </h1>
-                    <p className="text-gray-600 mt-1">Items overdue by more than 3 days (from Supabase & Google Sheets)</p>
+                    <p className="text-gray-600 mt-1">
+                        Items overdue by more than 3 days (from Supabase & Google Sheets)
+                        {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') &&
+                            <span className="block text-sm text-orange-600 font-medium mt-1">Grouped by Collector</span>
+                        }
+                    </p>
                 </div>
                 <button
                     onClick={loadPending}
@@ -277,63 +292,147 @@ function Pending({ user }) {
                                     </td>
                                 </tr>
                             ) : (
-                                currentItems.map((item) => {
-                                    const category = getOverdueCategory(item.days_overdue || 0)
-                                    const isOverdue = item.days_overdue >= 3
-                                    return (
-                                        <tr key={item.id} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
-                                            <td className="px-6 py-4">
-                                                <div className="font-medium text-gray-900">{item.teller_name}</div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {item.draw_date || 'N/A'}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
-                                                    {item.bet_code || 'N/A'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="font-semibold text-green-600">
-                                                    ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
-                                                    item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
-                                                        'bg-yellow-100 text-yellow-800'
-                                                    }`}>
-                                                    {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {item.days_overdue >= 3 ? (
-                                                    <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-bold animate-pulse">
-                                                        For Deactivation
+                                // For admin and specialist: group by collector
+                                (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') ? (
+                                    Object.keys(groupedByCollector).sort().map(collectorName => {
+                                        const collectorItems = groupedByCollector[collectorName]
+
+                                        return (
+                                            <>
+                                                {/* Collector Header Row */}
+                                                <tr key={`header-${collectorName}`}>
+                                                    <td colSpan="10" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xl font-bold text-white uppercase tracking-wide">
+                                                                {collectorName}
+                                                            </span>
+                                                            <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
+                                                                {groupedByCollector[collectorName].length} item(s)
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {/* Collector Items */}
+                                                {collectorItems.map((item) => {
+                                                    const category = getOverdueCategory(item.days_overdue || 0)
+                                                    const isOverdue = item.days_overdue >= 3
+                                                    return (
+                                                        <tr key={item.id} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                                            <td className="px-6 py-4">
+                                                                <div className="font-medium text-gray-900">{item.teller_name}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                                {item.draw_date || 'N/A'}
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                                                                    {item.bet_code || 'N/A'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                                ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="font-semibold text-green-600">
+                                                                    ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
+                                                            <td className="px-6 py-4">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
+                                                                    item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
+                                                                        'bg-yellow-100 text-yellow-800'
+                                                                    }`}>
+                                                                    {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                {item.days_overdue >= 3 ? (
+                                                                    <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-bold animate-pulse">
+                                                                        For Deactivation
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                                                                        Warning ({item.days_overdue} days)
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <button
+                                                                    onClick={() => handleDelete(item)}
+                                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                    title="Remove (Returned to Cashier)"
+                                                                >
+                                                                    <Trash2 className="w-5 h-5" />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </>
+                                        )
+                                    })
+                                ) : (
+                                    // For collector role: show items without grouping (already filtered by their name)
+                                    currentItems.map((item) => {
+                                        const category = getOverdueCategory(item.days_overdue || 0)
+                                        const isOverdue = item.days_overdue >= 3
+                                        return (
+                                            <tr key={item.id} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                                <td className="px-6 py-4">
+                                                    <div className="font-medium text-gray-900">{item.teller_name}</div>
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">
+                                                    {item.draw_date || 'N/A'}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                                                        {item.bet_code || 'N/A'}
                                                     </span>
-                                                ) : (
-                                                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
-                                                        Warning ({item.days_overdue} days)
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">
+                                                    ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="font-semibold text-green-600">
+                                                        ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                                     </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <button
-                                                    onClick={() => handleDelete(item)}
-                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Remove (Returned to Cashier)"
-                                                >
-                                                    <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
+                                                        item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
+                                                            'bg-yellow-100 text-yellow-800'
+                                                        }`}>
+                                                        {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {item.days_overdue >= 3 ? (
+                                                        <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-bold animate-pulse">
+                                                            For Deactivation
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                                                            Warning ({item.days_overdue} days)
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <button
+                                                        onClick={() => handleDelete(item)}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Remove (Returned to Cashier)"
+                                                    >
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                )
                             )}
                         </tbody>
                     </table>

@@ -172,11 +172,13 @@ function Login({ onLogin }) {
                                 </div>
                                 <input
                                     id="username"
+                                    name="username"
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your username"
+                                    autoComplete="username"
                                     disabled={isLoading}
                                 />
                             </div>
@@ -195,11 +197,13 @@ function Login({ onLogin }) {
                                 </div>
                                 <input
                                     id="password"
+                                    name="password"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your password"
+                                    autoComplete="current-password"
                                     disabled={isLoading}
                                 />
                             </div>
