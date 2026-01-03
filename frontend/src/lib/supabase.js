@@ -415,6 +415,51 @@ export const dataHelpers = {
         return { success: true }
     },
 
+    // Areas operations
+    getAreas: async (filters = {}) => {
+        let query = supabase
+            .from('Areas')
+            .select('*')
+            .order('name', { ascending: true })
+
+        if (filters.status) query = query.eq('status', filters.status)
+
+        const { data, error } = await query
+        if (error) throw error
+        return data
+    },
+
+    createArea: async (area) => {
+        const { data, error } = await supabase
+            .from('Areas')
+            .insert([area])
+            .select()
+
+        if (error) throw error
+        return data
+    },
+
+    updateArea: async (id, updates) => {
+        const { data, error } = await supabase
+            .from('Areas')
+            .update(updates)
+            .eq('id', id)
+            .select()
+
+        if (error) throw error
+        return data
+    },
+
+    deleteArea: async (id) => {
+        const { error } = await supabase
+            .from('Areas')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+        return { success: true }
+    },
+
     // Dashboard statistics
     getDashboardStats: async (user = null) => {
         // For cashiers, only count cash items
@@ -445,3 +490,4 @@ export const dataHelpers = {
         }
     }
 }
+

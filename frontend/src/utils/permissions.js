@@ -18,6 +18,7 @@ export const PERMISSIONS = {
     CREATE_USER: 'create_user',
     UPDATE_USER: 'update_user',
     DELETE_USER: 'delete_user',
+    MANAGE_USERS: 'manage_users',
 
     // Reports actions
     EXPORT_REPORTS: 'export_reports',
@@ -43,6 +44,7 @@ const rolePermissions = {
         PERMISSIONS.CREATE_USER,
         PERMISSIONS.UPDATE_USER,
         PERMISSIONS.DELETE_USER,
+        PERMISSIONS.MANAGE_USERS,
         PERMISSIONS.EXPORT_REPORTS,
     ],
     'specialist': [

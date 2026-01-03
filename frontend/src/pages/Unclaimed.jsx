@@ -23,6 +23,7 @@ function Unclaimed({ user }) {
     const [editingItem, setEditingItem] = useState(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
+    const [collectors, setCollectors] = useState([])
     const [formData, setFormData] = useState({
         teller_name: '',
         bet_number: '',
@@ -44,6 +45,10 @@ function Unclaimed({ user }) {
     useEffect(() => {
         loadUnclaimed()
     }, [filterFranchise, filterArea, filterStatus])
+
+    useEffect(() => {
+        loadCollectors()
+    }, [])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
@@ -82,6 +87,15 @@ function Unclaimed({ user }) {
             alert('Error loading unclaimed')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const loadCollectors = async () => {
+        try {
+            const data = await dataHelpers.getUsers({ role: 'collector', status: 'active' })
+            setCollectors(data)
+        } catch (error) {
+            console.error('Error loading collectors:', error)
         }
     }
 
@@ -989,16 +1003,21 @@ function Unclaimed({ user }) {
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>
-                                                    <input
+                                                    <select
                                                         id="modal-collector"
                                                         name="collector"
-                                                        type="text"
                                                         value={formData.collector}
                                                         onChange={(e) => setFormData({ ...formData, collector: e.target.value })}
-                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${user?.role?.toLowerCase() === 'collector' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
-                                                        placeholder="Enter collector name"
-                                                        readOnly={user?.role?.toLowerCase() === 'collector'}
-                                                    />
+                                                        disabled={isCollectorEditMode || user?.role?.toLowerCase() === 'collector'}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode || user?.role?.toLowerCase() === 'collector' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                    >
+                                                        <option value="">Select Collector</option>
+                                                        {collectors.map(collector => (
+                                                            <option key={collector.id} value={collector.fullname}>
+                                                                {collector.fullname}
+                                                            </option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-return-date" className="text-xs font-semibold text-gray-700">Return Date & Time</label>

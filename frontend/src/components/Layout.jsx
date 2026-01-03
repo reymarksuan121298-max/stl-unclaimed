@@ -7,6 +7,7 @@ import {
     Wallet,
     FileText,
     Users,
+    MapPin,
     LogOut,
     Menu,
     X
@@ -36,6 +37,7 @@ function Layout({ children, user }) {
         { name: 'Collections', href: '/collections', icon: DollarSign, permission: PERMISSIONS.VIEW_COLLECTIONS },
         { name: 'Reports', href: '/reports', icon: FileText, permission: PERMISSIONS.VIEW_REPORTS },
         { name: 'Users', href: '/users', icon: Users, permission: PERMISSIONS.VIEW_USERS },
+        { name: 'Areas', href: '/areas', icon: MapPin, permission: PERMISSIONS.MANAGE_USERS },
     ].filter(item => hasPermission(user, item.permission))
 
     const isActive = (path) => {
