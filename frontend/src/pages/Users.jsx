@@ -4,6 +4,7 @@ import { dataHelpers, authHelpers } from '../lib/supabase'
 
 function Users({ user }) {
     const [users, setUsers] = useState([])
+    const [areas, setAreas] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRole, setFilterRole] = useState('')
@@ -20,11 +21,13 @@ function Users({ user }) {
         contact_number: '',
         role: 'staff',
         franchising_name: '',
+        area: '',
         status: 'active'
     })
 
     useEffect(() => {
         loadUsers()
+        loadAreas()
     }, [filterRole, filterStatus])
 
     useEffect(() => {
@@ -45,6 +48,15 @@ function Users({ user }) {
             alert('Error loading users')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const loadAreas = async () => {
+        try {
+            const data = await dataHelpers.getAreas({ status: 'active' })
+            setAreas(data)
+        } catch (error) {
+            console.error('Error loading areas:', error)
         }
     }
 
@@ -85,6 +97,7 @@ function Users({ user }) {
                 contact_number: user.contact_number || '',
                 role: user.role,
                 franchising_name: user.franchising_name || '',
+                area: user.area || '',
                 status: user.status
             })
         } else {
@@ -96,6 +109,7 @@ function Users({ user }) {
                 contact_number: '',
                 role: 'staff',
                 franchising_name: '',
+                area: '',
                 status: 'active'
             })
         }
@@ -243,6 +257,7 @@ function Users({ user }) {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ContactNumber</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">FranchisingName</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Area</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
                             </tr>
@@ -250,7 +265,7 @@ function Users({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {currentUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center">
+                                    <td colSpan="8" className="px-6 py-12 text-center">
                                         <UsersIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No users found</p>
                                     </td>
@@ -271,6 +286,7 @@ function Users({ user }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{user.franchising_name || ''}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{user.area || '-'}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${user.status === 'active'
                                                 ? 'bg-green-100 text-green-800'
@@ -469,7 +485,24 @@ function Users({ user }) {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="space-y-1 col-span-2">
+                                {formData.role === 'collector' && (
+                                    <div className="space-y-1">
+                                        <label htmlFor="user-area" className="text-sm font-medium text-gray-700">Designated Area</label>
+                                        <select
+                                            id="user-area"
+                                            name="area"
+                                            value={formData.area}
+                                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
+                                        >
+                                            <option value="">Select Area</option>
+                                            {areas.map(area => (
+                                                <option key={area.id} value={area.name}>{area.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+                                <div className={`space-y-1 ${formData.role === 'collector' ? '' : 'col-span-2'}`}>
                                     <label htmlFor="user-status" className="text-sm font-medium text-gray-700">Status</label>
                                     <select
                                         id="user-status"
