@@ -86,13 +86,13 @@ export const dataHelpers = {
         const returnDate = new Date().toISOString()
 
         // Determine status based on user role
-        // Cashiers mark as "Uncollected" (pending admin verification)
-        // Admin/Specialist mark as "Collected" (final status)
+        // Cashiers mark as "Uncollected" (pending admin/specialist verification, NOT synced to Collections)
+        // Admin/Specialist mark as "Collected" (final status, triggers sync to Collections via database trigger)
         const newStatus = userRole?.toLowerCase() === 'cashier' ? 'Uncollected' : 'Collected'
 
         // 2. Update Unclaimed status
-        // This update will fire the database trigger 'on_unclaimed_collected'
-        // which automatically handles insertions into OverAllCollections and Reports.
+        // NOTE: The database trigger 'on_unclaimed_collected' only fires when status = 'Collected'
+        // So cashier's "Uncollected" status will NOT create entries in OverAllCollections or Reports
         const { error: updateError } = await supabase
             .from('Unclaimed')
             .update({

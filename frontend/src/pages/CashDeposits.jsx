@@ -220,7 +220,7 @@ function CashDeposits({ user }) {
     }
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
-    const banks = ['BDO', 'BPI', 'Metrobank', 'Landbank', 'PNB', 'UnionBank', 'Security Bank', 'RCBC']
+    const banks = ['Bank Transfer', 'BDO', 'BPI', 'Metrobank', 'Landbank', 'PNB', 'UnionBank', 'Security Bank', 'RCBC']
 
     if (loading && items.length === 0) {
         return (

@@ -557,13 +557,24 @@ function Unclaimed({ user }) {
                                         <td className="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{item.created_by || 'N/A'}</td>
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             {(() => {
-                                                // For cashiers, show "Collected" when status is "Uncollected"
+                                                // For cashiers viewing their own marked items, show "Unclaimed" instead of "Uncollected"
                                                 const displayStatus = (user?.role?.toLowerCase() === 'cashier' && item.status === 'Uncollected')
-                                                    ? 'Collected'
+                                                    ? 'Unclaimed'
                                                     : item.status;
 
+                                                // Color coding:
+                                                // - Orange: Uncollected (marked by cashier, pending admin/specialist verification)
+                                                // - Green: Collected (approved by admin/specialist)
+                                                // - Gray: Unclaimed or other statuses
+                                                let statusColor = 'text-gray-900';
+                                                if (item.status === 'Uncollected') {
+                                                    statusColor = 'text-orange-600 font-semibold';
+                                                } else if (item.status === 'Collected') {
+                                                    statusColor = 'text-green-600 font-semibold';
+                                                }
+
                                                 return (
-                                                    <span className="text-xs text-gray-900 font-medium">
+                                                    <span className={`text-xs ${statusColor}`}>
                                                         {displayStatus}
                                                     </span>
                                                 );

@@ -242,12 +242,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 3. Handle unclaimed collection (supports Uncollected and Collected statuses)
+-- 3. Handle unclaimed collection (only for Collected status - admin/specialist approved)
 CREATE OR REPLACE FUNCTION public.handle_unclaimed_collection()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Trigger when status changes to either 'Uncollected' (cashier) or 'Collected' (admin/specialist)
-    IF (OLD.status IS DISTINCT FROM NEW.status AND (NEW.status = 'Collected' OR NEW.status = 'Uncollected')) THEN
+    -- Trigger ONLY when status changes to 'Collected' (admin/specialist approval)
+    -- Cashier's 'Uncollected' status does NOT trigger this, keeping items in Unclaimed until verified
+    IF (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'Collected') THEN
         -- Check if record already exists in OverAllCollections
         IF NOT EXISTS (SELECT 1 FROM public."OverAllCollections" WHERE unclaimed_id = NEW.id) THEN
             -- Insert into OverAllCollections
@@ -299,14 +300,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-COMMENT ON FUNCTION handle_unclaimed_collection() IS 'Handles both Uncollected (cashier) and Collected (admin) statuses';
+COMMENT ON FUNCTION handle_unclaimed_collection() IS 'Handles ONLY Collected status (admin/specialist approved). Uncollected (cashier marked) does NOT sync to Collections.';
 
 -- 4. Sync updates from Unclaimed to Collections and Reports
 CREATE OR REPLACE FUNCTION public.sync_unclaimed_to_collections()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Only sync if status is Collected or Uncollected (items in collections)
-    IF NEW.status IN ('Collected', 'Uncollected') THEN
+    -- Only sync if status is Collected (admin/specialist approved)
+    -- Uncollected items (cashier marked) are NOT synced to Collections
+    IF NEW.status = 'Collected' THEN
         -- Update OverAllCollections
         UPDATE public."OverAllCollections"
         SET 
@@ -360,7 +362,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-COMMENT ON FUNCTION sync_unclaimed_to_collections() IS 'Syncs updates from Unclaimed to OverAllCollections and Reports, including charge_amount changes';
+COMMENT ON FUNCTION sync_unclaimed_to_collections() IS 'Syncs updates from Unclaimed to OverAllCollections and Reports ONLY for Collected status';
 
 -- ============================================================================
 -- TRIGGERS
