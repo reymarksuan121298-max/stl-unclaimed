@@ -280,7 +280,9 @@ function Pending({ user }) {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Notification</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
+                                {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Action</th>
+                                )}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -324,7 +326,7 @@ function Pending({ user }) {
                                                             <td className="px-6 py-4 text-sm text-gray-600">
                                                                 {item.draw_date || 'N/A'}
                                                             </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number ?? 'N/A'}</td>
                                                             <td className="px-6 py-4">
                                                                 <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
                                                                     {item.bet_code || 'N/A'}
@@ -358,15 +360,17 @@ function Pending({ user }) {
                                                                     </span>
                                                                 )}
                                                             </td>
-                                                            <td className="px-6 py-4">
-                                                                <button
-                                                                    onClick={() => handleDelete(item)}
-                                                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                    title="Remove (Returned to Cashier)"
-                                                                >
-                                                                    <Trash2 className="w-5 h-5" />
-                                                                </button>
-                                                            </td>
+                                                            {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
+                                                                <td className="px-6 py-4">
+                                                                    <button
+                                                                        onClick={() => handleDelete(item)}
+                                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                        title="Remove (Returned to Cashier)"
+                                                                    >
+                                                                        <Trash2 className="w-5 h-5" />
+                                                                    </button>
+                                                                </td>
+                                                            )}
                                                         </tr>
                                                     )
                                                 })}
@@ -386,7 +390,7 @@ function Pending({ user }) {
                                                 <td className="px-6 py-4 text-sm text-gray-600">
                                                     {item.draw_date || 'N/A'}
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number || 'N/A'}</td>
+                                                <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number ?? 'N/A'}</td>
                                                 <td className="px-6 py-4">
                                                     <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
                                                         {item.bet_code || 'N/A'}
@@ -420,15 +424,17 @@ function Pending({ user }) {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <button
-                                                        onClick={() => handleDelete(item)}
-                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Remove (Returned to Cashier)"
-                                                    >
-                                                        <Trash2 className="w-5 h-5" />
-                                                    </button>
-                                                </td>
+                                                {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
+                                                    <td className="px-6 py-4">
+                                                        <button
+                                                            onClick={() => handleDelete(item)}
+                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Remove (Returned to Cashier)"
+                                                        >
+                                                            <Trash2 className="w-5 h-5" />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         )
                                     })
