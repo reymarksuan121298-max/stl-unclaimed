@@ -989,17 +989,16 @@ function Unclaimed({ user }) {
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-area" className="text-xs font-semibold text-gray-700">Area</label>
-                                                    <select
+                                                    <input
                                                         id="modal-area"
                                                         name="area"
+                                                        type="text"
                                                         value={formData.area}
                                                         onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                                                         disabled={isCollectorEditMode}
                                                         className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
-                                                    >
-                                                        <option value="">Select Area</option>
-                                                        {areas.map(area => <option key={area} value={area}>{area}</option>)}
-                                                    </select>
+                                                        placeholder="Enter area name"
+                                                    />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>

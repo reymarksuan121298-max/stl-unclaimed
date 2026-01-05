@@ -4,7 +4,7 @@ import { dataHelpers, authHelpers } from '../lib/supabase'
 
 function Users({ user }) {
     const [users, setUsers] = useState([])
-    const [areas, setAreas] = useState([])
+    const [municipalities, setMunicipalities] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRole, setFilterRole] = useState('')
@@ -21,13 +21,13 @@ function Users({ user }) {
         contact_number: '',
         role: 'staff',
         franchising_name: '',
-        area: '',
+        municipality: '',
         status: 'active'
     })
 
     useEffect(() => {
         loadUsers()
-        loadAreas()
+        loadMunicipalities()
     }, [filterRole, filterStatus])
 
     useEffect(() => {
@@ -51,12 +51,12 @@ function Users({ user }) {
         }
     }
 
-    const loadAreas = async () => {
+    const loadMunicipalities = async () => {
         try {
             const data = await dataHelpers.getAreas({ status: 'active' })
-            setAreas(data)
+            setMunicipalities(data)
         } catch (error) {
-            console.error('Error loading areas:', error)
+            console.error('Error loading municipalities:', error)
         }
     }
 
@@ -97,7 +97,7 @@ function Users({ user }) {
                 contact_number: user.contact_number || '',
                 role: user.role,
                 franchising_name: user.franchising_name || '',
-                area: user.area || '',
+                municipality: user.municipality || '',
                 status: user.status
             })
         } else {
@@ -109,7 +109,7 @@ function Users({ user }) {
                 contact_number: '',
                 role: 'staff',
                 franchising_name: '',
-                area: '',
+                municipality: '',
                 status: 'active'
             })
         }
@@ -257,7 +257,7 @@ function Users({ user }) {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ContactNumber</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Role</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">FranchisingName</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Area</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Municipality</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Actions</th>
                             </tr>
@@ -286,7 +286,7 @@ function Users({ user }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{user.franchising_name || ''}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{user.area || '-'}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">{user.municipality || '-'}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${user.status === 'active'
                                                 ? 'bg-green-100 text-green-800'
@@ -487,17 +487,17 @@ function Users({ user }) {
                                 </div>
                                 {formData.role === 'collector' && (
                                     <div className="space-y-1">
-                                        <label htmlFor="user-area" className="text-sm font-medium text-gray-700">Designated Area</label>
+                                        <label htmlFor="user-municipality" className="text-sm font-medium text-gray-700">Designated Municipality</label>
                                         <select
-                                            id="user-area"
-                                            name="area"
-                                            value={formData.area}
-                                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                            id="user-municipality"
+                                            name="municipality"
+                                            value={formData.municipality}
+                                            onChange={(e) => setFormData({ ...formData, municipality: e.target.value })}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         >
-                                            <option value="">Select Area</option>
-                                            {areas.map(area => (
-                                                <option key={area.id} value={area.name}>{area.name}</option>
+                                            <option value="">Select Municipality</option>
+                                            {municipalities.map(municipality => (
+                                                <option key={municipality.id} value={municipality.name}>{municipality.name}</option>
                                             ))}
                                         </select>
                                     </div>

@@ -31,6 +31,7 @@ CREATE TRIGGER update_areas_updated_at
 
 -- Seed with existing areas
 INSERT INTO "Areas" (name, description, status) VALUES
+-- Existing areas
 ('BAROY', 'Baroy Area', 'active'),
 ('KAPATAGAN', 'Kapatagan Area', 'active'),
 ('KOLAMBOGAN', 'Kolambogan Area', 'active'),
@@ -39,7 +40,23 @@ INSERT INTO "Areas" (name, description, status) VALUES
 ('SALVADOR', 'Salvador Area', 'active'),
 ('SAPAD', 'Sapad Area', 'active'),
 ('SND', 'SND Area', 'active'),
-('TUBOD', 'Tubod Area', 'active')
+('TUBOD', 'Tubod Area', 'active'),
+-- 5A Royal Gaming OPC areas
+('PARANG', 'Parang Area', 'active'),
+('DATUSAUDI', 'Datu Saudi Area', 'active'),
+('UPI', 'Upi Area', 'active'),
+('AMPATUAN', 'Ampatuan Area', 'active'),
+('SAIDONA', 'Saidona Area', 'active'),
+('DALICAN', 'Dalican Area', 'active'),
+('SOUTHUPI', 'South Upi Area', 'active'),
+('NKABUNTALAN', 'North Kabuntalan Area', 'active'),
+('DAS', 'DAS Area', 'active'),
+('DATUPIANG', 'Datu Piang Area', 'active'),
+('PAGALUNGAN', 'Pagalungan Area', 'active'),
+('MONTAWAL', 'Montawal Area', 'active'),
+('RAJAHBUAYAN', 'Rajah Buayan Area', 'active'),
+('BULUAN', 'Buluan Area', 'active'),
+('MAMASAPANO', 'Mamasapano Area', 'active')
 ON CONFLICT (name) DO NOTHING;
 
 -- Add comment
