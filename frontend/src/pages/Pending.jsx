@@ -245,6 +245,16 @@ function Pending({ user }) {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage
     const currentItems = filteredItems.slice(indexOfFirstItem, indexOfLastItem)
 
+    // Group ALL filtered items by collector (for download functionality)
+    const allGroupedByCollector = {}
+    filteredItems.forEach(item => {
+        const collectorName = item.collector || 'Unassigned'
+        if (!allGroupedByCollector[collectorName]) {
+            allGroupedByCollector[collectorName] = []
+        }
+        allGroupedByCollector[collectorName].push(item)
+    })
+
     // Group ONLY the current page items by collector for admin and specialist views
     const groupedByCollector = {}
     currentItems.forEach(item => {
@@ -432,11 +442,11 @@ function Pending({ user }) {
                                                             </span>
                                                             <div className="flex items-center gap-3">
                                                                 <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
-                                                                    {groupedByCollector[collectorName].length} item(s)
+                                                                    {allGroupedByCollector[collectorName]?.length || 0} item(s)
                                                                 </span>
                                                                 {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
                                                                     <button
-                                                                        onClick={() => downloadCollectorImage(collectorName, collectorItems)}
+                                                                        onClick={() => downloadCollectorImage(collectorName, allGroupedByCollector[collectorName] || [])}
                                                                         className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
                                                                         title="Download as Image"
                                                                     >
