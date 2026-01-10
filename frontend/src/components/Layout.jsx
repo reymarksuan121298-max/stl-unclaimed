@@ -51,12 +51,12 @@ function Layout({ children, user }) {
             <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
                 <div className="flex flex-col flex-grow bg-gradient-to-b from-indigo-600 to-purple-700 overflow-y-auto shadow-2xl">
                     {/* Logo */}
-                    <div className="flex items-center flex-shrink-0 px-6 py-6 bg-black/10">
-                        <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
+                        <div className="flex flex-col items-center gap-2">
                             <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center">
                                 <Package className="w-6 h-6 text-white" />
                             </div>
-                            <div>
+                            <div className="text-center">
                                 <h1 className="text-xl font-bold text-white">STL Unclaimed</h1>
                                 <p className="text-xs text-indigo-200">Collections System</p>
                             </div>
@@ -155,12 +155,12 @@ function Layout({ children, user }) {
                         >
                             <div className="flex flex-col h-full bg-gradient-to-b from-indigo-600 to-purple-700 shadow-2xl">
                                 {/* Logo */}
-                                <div className="flex items-center flex-shrink-0 px-6 py-6 bg-black/10">
-                                    <div className="flex items-center gap-3">
+                                <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
+                                    <div className="flex flex-col items-center gap-2">
                                         <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center">
                                             <Package className="w-6 h-6 text-white" />
                                         </div>
-                                        <div>
+                                        <div className="text-center">
                                             <h1 className="text-xl font-bold text-white">STL Unclaimed</h1>
                                             <p className="text-xs text-indigo-200">Collections System</p>
                                         </div>

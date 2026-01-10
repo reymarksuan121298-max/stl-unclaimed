@@ -162,8 +162,7 @@ function Pending({ user }) {
             canvas.toBlob((blob) => {
                 const url = URL.createObjectURL(blob)
                 const link = document.createElement('a')
-                const timestamp = new Date().toISOString().split('T')[0]
-                link.download = `pending-items-${collectorName.replace(/\s+/g, '-')}-${timestamp}.png`
+                link.download = `${collectorName.replace(/\s+/g, '-')}.png`
                 link.href = url
                 link.click()
                 URL.revokeObjectURL(url)
@@ -189,7 +188,7 @@ function Pending({ user }) {
             // Fetch from both sources in parallel
             const [supabaseData, sheetsData] = await Promise.allSettled([
                 dataHelpers.getPending(filters),
-                googleSheetsHelpers.getPendingFromSheets()
+                googleSheetsHelpers.getPendingFromSheets(user) // Pass user for filtering
             ])
 
             // Process Supabase data
@@ -216,6 +215,51 @@ function Pending({ user }) {
             } else {
                 console.warn('Could not load from Google Sheets:', sheetsData.reason?.message)
                 // Continue with Supabase data only
+            }
+
+            // For cashiers, filter by their assigned collectors
+            // Cashiers should only see pending items for collectors assigned to them
+            if (user?.role?.toLowerCase() === 'cashier') {
+                console.log('=== CASHIER FILTERING DEBUG ===')
+                console.log('User:', user)
+                console.log('Assigned Collectors:', user?.assigned_collectors)
+                console.log('Type of assigned_collectors:', typeof user?.assigned_collectors)
+                console.log('All items before filter:', allItems.length)
+                console.log('Sample collectors in items:', allItems.slice(0, 5).map(i => i.collector))
+
+                let assignedCollectors = user?.assigned_collectors
+
+                // Handle case where assigned_collectors might be stored as string (old data)
+                if (typeof assignedCollectors === 'string') {
+                    try {
+                        assignedCollectors = JSON.parse(assignedCollectors)
+                    } catch (e) {
+                        console.error('Failed to parse assigned_collectors:', e)
+                        assignedCollectors = []
+                    }
+                }
+
+                if (assignedCollectors && Array.isArray(assignedCollectors) && assignedCollectors.length > 0) {
+                    console.log('Filtering for collectors:', assignedCollectors)
+                    allItems = allItems.filter(item => {
+                        const isMatch = assignedCollectors.includes(item.collector)
+                        if (!isMatch && allItems.indexOf(item) < 5) {
+                            console.log(`Item collector "${item.collector}" not in assigned list:`, assignedCollectors)
+                        }
+                        return isMatch
+                    })
+                    console.log('Items after filter:', allItems.length)
+
+                    if (allItems.length === 0) {
+                        console.warn('⚠️ No pending items found for assigned collectors. This could mean:')
+                        console.warn('1. No pending items exist for these collectors')
+                        console.warn('2. Collector names in database don\'t match exactly')
+                        console.warn('3. You need to log out and log back in to refresh your user data')
+                    }
+                } else {
+                    console.log('❌ No assigned collectors found for cashier')
+                    console.log('Please contact admin to assign collectors to your account, then log out and log back in')
+                }
             }
 
             setItems(allItems)
@@ -331,7 +375,7 @@ function Pending({ user }) {
             {/* Filters */}
             {user?.role?.toLowerCase() !== 'collector' && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'cashier' ? 'md:grid-cols-1' : 'md:grid-cols-3'} gap-4`}>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <label htmlFor="pending-search" className="sr-only">Search items</label>
@@ -346,39 +390,43 @@ function Pending({ user }) {
                             />
                         </div>
 
-                        <div className="relative">
-                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <label htmlFor="pending-franchise-filter" className="sr-only">Filter by franchise</label>
-                            <select
-                                id="pending-franchise-filter"
-                                name="franchise"
-                                value={filterFranchise}
-                                onChange={(e) => setFilterFranchise(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
-                            >
-                                <option value="">All Franchises</option>
-                                {franchises.map(franchise => (
-                                    <option key={franchise} value={franchise}>{franchise}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {user?.role?.toLowerCase() !== 'cashier' && (
+                            <>
+                                <div className="relative">
+                                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <label htmlFor="pending-franchise-filter" className="sr-only">Filter by franchise</label>
+                                    <select
+                                        id="pending-franchise-filter"
+                                        name="franchise"
+                                        value={filterFranchise}
+                                        onChange={(e) => setFilterFranchise(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
+                                    >
+                                        <option value="">All Franchises</option>
+                                        {franchises.map(franchise => (
+                                            <option key={franchise} value={franchise}>{franchise}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        <div className="relative">
-                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                            <label htmlFor="pending-collector-filter" className="sr-only">Filter by collector</label>
-                            <select
-                                id="pending-collector-filter"
-                                name="collector"
-                                value={filterCollector}
-                                onChange={(e) => setFilterCollector(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
-                            >
-                                <option value="">All Collectors</option>
-                                {collectors.map(collector => (
-                                    <option key={collector} value={collector}>{collector}</option>
-                                ))}
-                            </select>
-                        </div>
+                                <div className="relative">
+                                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <label htmlFor="pending-collector-filter" className="sr-only">Filter by collector</label>
+                                    <select
+                                        id="pending-collector-filter"
+                                        name="collector"
+                                        value={filterCollector}
+                                        onChange={(e) => setFilterCollector(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
+                                    >
+                                        <option value="">All Collectors</option>
+                                        {collectors.map(collector => (
+                                            <option key={collector} value={collector}>{collector}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -426,8 +474,8 @@ function Pending({ user }) {
                                     </td>
                                 </tr>
                             ) : (
-                                // For admin and specialist: group by collector
-                                (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') ? (
+                                // For admin, specialist, and cashier: group by collector
+                                (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist' || user?.role?.toLowerCase() === 'cashier') ? (
                                     Object.keys(groupedByCollector).sort().map(collectorName => {
                                         const collectorItems = groupedByCollector[collectorName]
 

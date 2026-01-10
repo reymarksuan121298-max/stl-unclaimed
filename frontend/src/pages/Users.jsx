@@ -5,6 +5,7 @@ import { dataHelpers, authHelpers } from '../lib/supabase'
 function Users({ user }) {
     const [users, setUsers] = useState([])
     const [municipalities, setMunicipalities] = useState([])
+    const [collectors, setCollectors] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRole, setFilterRole] = useState('')
@@ -22,12 +23,14 @@ function Users({ user }) {
         role: 'staff',
         franchising_name: '',
         municipality: '',
+        assigned_collectors: [],
         status: 'active'
     })
 
     useEffect(() => {
         loadUsers()
         loadMunicipalities()
+        loadCollectors()
     }, [filterRole, filterStatus])
 
     useEffect(() => {
@@ -57,6 +60,15 @@ function Users({ user }) {
             setMunicipalities(data)
         } catch (error) {
             console.error('Error loading municipalities:', error)
+        }
+    }
+
+    const loadCollectors = async () => {
+        try {
+            const data = await dataHelpers.getUsers({ role: 'collector', status: 'active' })
+            setCollectors(data)
+        } catch (error) {
+            console.error('Error loading collectors:', error)
         }
     }
 
@@ -98,6 +110,7 @@ function Users({ user }) {
                 role: user.role,
                 franchising_name: user.franchising_name || '',
                 municipality: user.municipality || '',
+                assigned_collectors: user.assigned_collectors || [],
                 status: user.status
             })
         } else {
@@ -110,6 +123,7 @@ function Users({ user }) {
                 role: 'staff',
                 franchising_name: '',
                 municipality: '',
+                assigned_collectors: [],
                 status: 'active'
             })
         }
@@ -502,7 +516,44 @@ function Users({ user }) {
                                         </select>
                                     </div>
                                 )}
-                                <div className={`space-y-1 ${formData.role === 'collector' ? '' : 'col-span-2'}`}>
+                                {formData.role === 'cashier' && (
+                                    <div className="col-span-2 space-y-2">
+                                        <label className="text-sm font-medium text-gray-700">Assigned Collectors</label>
+                                        <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-gray-50">
+                                            {collectors.length === 0 ? (
+                                                <p className="text-sm text-gray-500 text-center py-2">No collectors available</p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {collectors.map(collector => (
+                                                        <label key={collector.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={formData.assigned_collectors.includes(collector.fullname)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            assigned_collectors: [...formData.assigned_collectors, collector.fullname]
+                                                                        })
+                                                                    } else {
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            assigned_collectors: formData.assigned_collectors.filter(c => c !== collector.fullname)
+                                                                        })
+                                                                    }
+                                                                }}
+                                                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                            />
+                                                            <span className="text-sm text-gray-700">{collector.fullname}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-gray-500">Select collectors this cashier can view pending items for</p>
+                                    </div>
+                                )}
+                                <div className={`space-y-1 ${(formData.role === 'collector' || formData.role === 'cashier') ? '' : 'col-span-2'}`}>
                                     <label htmlFor="user-status" className="text-sm font-medium text-gray-700">Status</label>
                                     <select
                                         id="user-status"

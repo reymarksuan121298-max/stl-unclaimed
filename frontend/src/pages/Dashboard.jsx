@@ -27,7 +27,9 @@ function Dashboard({ user }) {
             // Fetch from both Supabase and Google Sheets in parallel
             const [dashboardStats, unclaimed, pendingFromSupabase, pendingFromSheets] = await Promise.allSettled([
                 dataHelpers.getDashboardStats(user),
-                dataHelpers.getUnclaimed({ status: 'Unclaimed' }),
+                // Fetch all unclaimed items with status 'Unclaimed' or 'Uncollected'
+                // This includes items created by cashiers and items awaiting verification
+                dataHelpers.getUnclaimed({ status: ['Unclaimed', 'Uncollected'] }),
                 dataHelpers.getPending({}),
                 googleSheetsHelpers.getPendingFromSheets()
             ])
@@ -37,7 +39,7 @@ function Dashboard({ user }) {
                 setStats(prev => ({ ...prev, ...dashboardStats.value }))
             }
 
-            // Process unclaimed items
+            // Process unclaimed items - show most recent 5
             if (unclaimed.status === 'fulfilled') {
                 setRecentUnclaimed(unclaimed.value.slice(0, 5))
             }

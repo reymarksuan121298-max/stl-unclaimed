@@ -21,9 +21,10 @@ const GOOGLE_SCRIPT_URLS = [
 export const googleSheetsHelpers = {
     /**
      * Fetch pending data from all configured Google Sheets via Apps Script
+     * @param {Object} user - The current user (optional, for filtering)
      * @returns {Promise<Array>} Array of pending items from all Google Sheets
      */
-    getPendingFromSheets: async () => {
+    getPendingFromSheets: async (user = null) => {
         if (GOOGLE_SCRIPT_URLS.length === 0) {
             console.warn('No Google Script URLs configured. Set VITE_GOOGLE_SCRIPT_URL_1 to VITE_GOOGLE_SCRIPT_URL_10 in .env')
             return []
@@ -79,7 +80,7 @@ export const googleSheetsHelpers = {
             }
 
             // Transform the data to match the expected format
-            return mergedData.map(item => ({
+            let transformedData = mergedData.map(item => ({
                 id: item.transCode, // Use transCode as unique ID
                 teller_name: item.tellerName,
                 trans_id: item.transCode,
@@ -94,6 +95,31 @@ export const googleSheetsHelpers = {
                 days_overdue: calculateDaysOverdue(item.drawTime),
                 source: 'google_sheets' // Mark the data source
             }))
+
+            // Filter for cashiers by assigned collectors
+            if (user?.role?.toLowerCase() === 'cashier') {
+                let assignedCollectors = user?.assigned_collectors
+
+                // Handle case where assigned_collectors might be stored as string
+                if (typeof assignedCollectors === 'string') {
+                    try {
+                        assignedCollectors = JSON.parse(assignedCollectors)
+                    } catch (e) {
+                        assignedCollectors = []
+                    }
+                }
+
+                if (assignedCollectors && Array.isArray(assignedCollectors) && assignedCollectors.length > 0) {
+                    transformedData = transformedData.filter(item =>
+                        assignedCollectors.includes(item.collector)
+                    )
+                    console.log(`🔍 Filtered Google Sheets data for cashier: ${transformedData.length} items`)
+                } else {
+                    transformedData = []
+                }
+            }
+
+            return transformedData
         } catch (error) {
             console.error('Error fetching from Google Sheets:', error)
             throw error

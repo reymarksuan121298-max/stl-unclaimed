@@ -467,8 +467,8 @@ export const dataHelpers = {
 
         const [unclaimed, pending, collections, reports] = await Promise.all([
             isCashier
-                ? supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).eq('status', 'Unclaimed').eq('mode', 'Cash')
-                : supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).eq('status', 'Unclaimed'),
+                ? supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected']).eq('mode', 'Cash')
+                : supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected']),
             isCashier
                 ? supabase.from('Pending').select('*', { count: 'exact', head: true }).eq('mode', 'Cash')
                 : supabase.from('Pending').select('*', { count: 'exact', head: true }),
