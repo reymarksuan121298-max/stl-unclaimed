@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Clock, Search, Filter, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react'
+import { Clock, Search, Filter, AlertTriangle, RefreshCw, Trash2, Download } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 import { googleSheetsHelpers } from '../lib/googleSheets'
 
@@ -49,6 +49,128 @@ function Pending({ user }) {
         } catch (error) {
             console.error('Error deleting item:', error)
             alert('Error removing item: ' + error.message)
+        }
+    }
+
+    const downloadCollectorImage = async (collectorName, collectorItems) => {
+        try {
+            // Create a canvas
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+
+            // Set canvas size
+            const width = 1200
+            const headerHeight = 80
+            const rowHeight = 40
+            const tableHeight = (collectorItems.length + 1) * rowHeight // +1 for header row
+            const padding = 20
+            canvas.width = width
+            canvas.height = headerHeight + tableHeight + padding * 2
+
+            // Fill background
+            ctx.fillStyle = '#ffffff'
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+            // Draw collector header
+            const gradient = ctx.createLinearGradient(0, 0, width, 0)
+            gradient.addColorStop(0, '#06b6d4') // cyan-500
+            gradient.addColorStop(1, '#2563eb') // blue-600
+            ctx.fillStyle = gradient
+            ctx.fillRect(0, 0, width, headerHeight)
+
+            ctx.fillStyle = '#ffffff'
+            ctx.font = 'bold 32px Arial'
+            ctx.textAlign = 'left'
+            ctx.fillText(collectorName.toUpperCase(), padding, 50)
+
+            // Draw item count badge
+            ctx.font = '16px Arial'
+            const badgeText = `${collectorItems.length} item(s)`
+            const badgeWidth = ctx.measureText(badgeText).width + 20
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)'
+            ctx.fillRect(width - badgeWidth - padding, 30, badgeWidth, 30)
+            ctx.fillStyle = '#ffffff'
+            ctx.fillText(badgeText, width - badgeWidth - padding + 10, 52)
+
+            // Table starting position
+            let yPos = headerHeight + padding
+
+            // Draw table header
+            ctx.fillStyle = '#fef3c7' // yellow-100
+            ctx.fillRect(0, yPos, width, rowHeight)
+
+            ctx.fillStyle = '#000000'
+            ctx.font = 'bold 14px Arial'
+            const columns = [
+                { text: 'Teller', x: padding },
+                { text: 'Draw Date', x: 200 },
+                { text: 'Bet No.', x: 350 },
+                { text: 'Bet Code', x: 450 },
+                { text: 'Bet Amt', x: 570 },
+                { text: 'Win Amt', x: 700 },
+                { text: 'Status', x: 850 },
+                { text: 'Days', x: 1000 }
+            ]
+
+            columns.forEach(col => {
+                ctx.fillText(col.text, col.x, yPos + 25)
+            })
+
+            yPos += rowHeight
+
+            // Draw table rows
+            ctx.font = '12px Arial'
+            collectorItems.forEach((item, index) => {
+                // Alternate row colors
+                if (index % 2 === 0) {
+                    ctx.fillStyle = '#f9fafb' // gray-50
+                    ctx.fillRect(0, yPos, width, rowHeight)
+                }
+
+                // Row background color based on overdue status
+                if (item.days_overdue >= 3) {
+                    ctx.fillStyle = '#fee2e2' // red-100
+                    ctx.fillRect(0, yPos, width, rowHeight)
+                }
+
+                ctx.fillStyle = '#000000'
+
+                // Draw cell data
+                ctx.fillText(item.teller_name || 'N/A', padding, yPos + 25)
+                ctx.fillText(item.draw_date || 'N/A', 200, yPos + 25)
+                ctx.fillText(String(item.bet_number ?? 'N/A'), 350, yPos + 25)
+                ctx.fillText(item.bet_code || 'N/A', 450, yPos + 25)
+                ctx.fillText(`₱${parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 570, yPos + 25)
+                ctx.fillText(`₱${parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}`, 700, yPos + 25)
+
+                // Status badge
+                const status = item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'
+                ctx.fillText(status, 850, yPos + 25)
+
+                // Days overdue
+                ctx.fillText(`${item.days_overdue || 0} days`, 1000, yPos + 25)
+
+                yPos += rowHeight
+            })
+
+            // Draw table border
+            ctx.strokeStyle = '#e5e7eb' // gray-200
+            ctx.lineWidth = 1
+            ctx.strokeRect(0, headerHeight + padding, width, tableHeight)
+
+            // Convert canvas to blob and download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement('a')
+                const timestamp = new Date().toISOString().split('T')[0]
+                link.download = `pending-items-${collectorName.replace(/\s+/g, '-')}-${timestamp}.png`
+                link.href = url
+                link.click()
+                URL.revokeObjectURL(url)
+            })
+        } catch (error) {
+            console.error('Error generating image:', error)
+            alert('Error generating image: ' + error.message)
         }
     }
 
@@ -308,9 +430,21 @@ function Pending({ user }) {
                                                             <span className="text-xl font-bold text-white uppercase tracking-wide">
                                                                 {collectorName}
                                                             </span>
-                                                            <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
-                                                                {groupedByCollector[collectorName].length} item(s)
-                                                            </span>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
+                                                                    {groupedByCollector[collectorName].length} item(s)
+                                                                </span>
+                                                                {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
+                                                                    <button
+                                                                        onClick={() => downloadCollectorImage(collectorName, collectorItems)}
+                                                                        className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                                                                        title="Download as Image"
+                                                                    >
+                                                                        <Download className="w-4 h-4" />
+                                                                        <span className="text-sm font-medium">Download</span>
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </tr>
