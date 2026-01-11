@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import unclaimedIcon from '../assets/unclaimed.png'
 
 function Login({ onLogin }) {
     const [username, setUsername] = useState('')
@@ -132,12 +133,9 @@ function Login({ onLogin }) {
             {/* Login Card */}
             <div className="relative w-full max-w-md">
                 <div className="bg-white/20 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-12 border border-white/30">
-                    {/* Logo/Header */}
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl mb-4 shadow-lg">
-                            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
+                        <div className="inline-flex items-center justify-center mb-4">
+                            <img src={unclaimedIcon} alt="Unclaimed Logo" className="w-32 h-20 object-cover rounded-2xl" />
                         </div>
                         <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
                             Welcome Back
