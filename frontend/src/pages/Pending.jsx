@@ -262,6 +262,16 @@ function Pending({ user }) {
                 }
             }
 
+            // Sort by draw_date (most recent first) and limit to top 10
+            allItems.sort((a, b) => {
+                const dateA = new Date(a.draw_date || 0)
+                const dateB = new Date(b.draw_date || 0)
+                return dateB - dateA // Descending order (newest first)
+            })
+
+            // Limit to top 10 most recent items
+            allItems = allItems.slice(0, 10)
+
             setItems(allItems)
         } catch (error) {
             console.error('Error loading pending:', error)
@@ -343,7 +353,7 @@ function Pending({ user }) {
                         Pending Items
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Items overdue by more than 3 days (from Supabase & Google Sheets)
+                        Top 10 Most Recent - Items overdue by more than 3 days (from Supabase & Google Sheets)
                         {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') &&
                             <span className="block text-sm text-orange-600 font-medium mt-1">Grouped by Collector</span>
                         }
