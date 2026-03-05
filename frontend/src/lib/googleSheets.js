@@ -36,7 +36,14 @@ export const googleSheetsHelpers = {
             // Fetch from all URLs in parallel
             const fetchPromises = GOOGLE_SCRIPT_URLS.map(async (url, index) => {
                 try {
-                    const response = await fetch(url, {
+                    // Build the URL with optional collector filter
+                    let targetUrl = url
+                    if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                        targetUrl += (targetUrl.includes('?') ? '&' : '?') + `collector=${encodeURIComponent(user.username)}`
+                        console.log(`👤 Identifying as collector: ${user.username}`)
+                    }
+
+                    const response = await fetch(targetUrl, {
                         method: 'GET',
                         redirect: 'follow',
                         headers: {
@@ -96,27 +103,24 @@ export const googleSheetsHelpers = {
                 source: 'google_sheets' // Mark the data source
             }))
 
-            // Filter for cashiers by assigned collectors
-            if (user?.role?.toLowerCase() === 'cashier') {
-                let assignedCollectors = user?.assigned_collectors
+            // Filter for cashiers based on their assigned collectors (case-insensitive)
+            if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
+                console.log('🔍 Filtering for cashier:', user.fullname)
+                console.log('📋 Assigned collectors:', user.assigned_collectors)
 
-                // Handle case where assigned_collectors might be stored as string
-                if (typeof assignedCollectors === 'string') {
-                    try {
-                        assignedCollectors = JSON.parse(assignedCollectors)
-                    } catch (e) {
-                        assignedCollectors = []
+                // Convert assigned collectors to lowercase for case-insensitive comparison
+                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase())
+
+                transformedData = transformedData.filter(item => {
+                    const itemCollectorLower = (item.collector || '').toLowerCase()
+                    const isAssigned = assignedCollectorsLower.includes(itemCollectorLower)
+                    if (!isAssigned && item.collector) {
+                        console.log(`❌ Filtering out item with collector: "${item.collector}"`)
                     }
-                }
+                    return isAssigned
+                })
 
-                if (assignedCollectors && Array.isArray(assignedCollectors) && assignedCollectors.length > 0) {
-                    transformedData = transformedData.filter(item =>
-                        assignedCollectors.includes(item.collector)
-                    )
-                    console.log(`🔍 Filtered Google Sheets data for cashier: ${transformedData.length} items`)
-                } else {
-                    transformedData = []
-                }
+                console.log(`✅ Filtered to ${transformedData.length} items for cashier`)
             }
 
             return transformedData

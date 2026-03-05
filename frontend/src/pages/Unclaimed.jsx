@@ -76,8 +76,8 @@ function Unclaimed({ user }) {
             if (filterArea) filters.area = filterArea
 
             // If user is a collector, only fetch their items
-            if (user?.role?.toLowerCase() === 'collector') {
-                filters.collector = user.fullname
+            if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                filters.collector = user.username
             }
 
             const data = await dataHelpers.getUnclaimed(filters)
@@ -240,7 +240,7 @@ function Unclaimed({ user }) {
                 payment_type: item.payment_type || 'Full Payment',
                 franchise_name: item.franchise_name,
                 area: item.area || '',
-                collector: item.collector || (user?.role?.toLowerCase() === 'collector' ? user.fullname : ''),
+                collector: item.collector || (user?.role?.toLowerCase() === 'collector' ? user.username : ''),
                 return_date: formattedReturnDate,
                 status: item.status || 'Unclaimed',
                 receipt_image: item.receipt_image || '',
@@ -262,7 +262,7 @@ function Unclaimed({ user }) {
                 payment_type: 'Full Payment',
                 franchise_name: '5A Royal Gaming OPC',
                 area: '',
-                collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : '',
+                collector: user?.role?.toLowerCase() === 'collector' ? user.username : '',
                 return_date: '',
                 status: 'Unclaimed',
                 receipt_image: '',
@@ -304,7 +304,7 @@ function Unclaimed({ user }) {
                 return_date: returnDateValue,
                 receipt_image: receiptImageUrl || null,
                 // Automatically set collector if user is a collector
-                collector: user?.role?.toLowerCase() === 'collector' ? user.fullname : formData.collector,
+                collector: user?.role?.toLowerCase() === 'collector' ? user.username : formData.collector,
                 // Track who created this item (only set on creation, not update)
                 ...(editingItem ? {} : { created_by: user?.fullname || user?.username || 'Unknown' })
             }

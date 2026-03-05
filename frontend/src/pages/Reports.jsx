@@ -17,7 +17,11 @@ function Reports({ user }) {
     const loadData = async () => {
         try {
             setLoading(true)
-            const data = await dataHelpers.getCollections()
+            const filters = {}
+            if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                filters.collector = user.username
+            }
+            const data = await dataHelpers.getCollections(filters)
             setItems(data)
         } catch (error) {
             console.error('Error loading report data:', error)

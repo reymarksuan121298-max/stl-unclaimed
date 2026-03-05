@@ -24,14 +24,22 @@ function Dashboard({ user }) {
         try {
             setLoading(true)
 
+            // Apply collector filters if user is a collector
+            const filters = {}
+            if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                filters.collector = user.username
+            }
+
             // Fetch from both Supabase and Google Sheets in parallel
             const [dashboardStats, unclaimed, pendingFromSupabase, pendingFromSheets] = await Promise.allSettled([
                 dataHelpers.getDashboardStats(user),
-                // Fetch all unclaimed items with status 'Unclaimed' or 'Uncollected'
-                // This includes items created by cashiers and items awaiting verification
-                dataHelpers.getUnclaimed({ status: ['Unclaimed', 'Uncollected'] }),
-                dataHelpers.getPending({}),
-                googleSheetsHelpers.getPendingFromSheets()
+                // Fetch all unclaimed items with matching status and collector filter
+                dataHelpers.getUnclaimed({
+                    status: ['Unclaimed', 'Uncollected'],
+                    ...filters
+                }),
+                dataHelpers.getPending(filters),
+                googleSheetsHelpers.getPendingFromSheets(user)
             ])
 
             // Process Supabase stats

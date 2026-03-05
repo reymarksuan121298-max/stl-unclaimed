@@ -180,9 +180,9 @@ function Pending({ user }) {
             if (filterFranchise) filters.franchise_name = filterFranchise
             if (filterCollector) filters.collector = filterCollector
 
-            // Auto-filter by collector's fullname if user is a collector
-            if (user?.role?.toLowerCase() === 'collector' && user?.fullname) {
-                filters.collector = user.fullname
+            // Auto-filter by collector's username if user is a collector
+            if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                filters.collector = user.username
             }
 
             // Fetch from both sources in parallel
@@ -205,9 +205,15 @@ function Pending({ user }) {
                 let filteredSheetsData = sheetsData.value
 
                 if (filters.collector) {
-                    filteredSheetsData = filteredSheetsData.filter(
-                        item => item.collector === filters.collector
-                    )
+                    const filterLower = filters.collector.toLowerCase().trim()
+                    const filterSimple = filterLower.split('@')[0].replace(/\s+/g, '')
+
+                    filteredSheetsData = filteredSheetsData.filter(item => {
+                        const rowCollector = (item.collector || '').toString().trim().toLowerCase()
+                        const rowSimple = rowCollector.split('@')[0].replace(/\s+/g, '')
+
+                        return rowCollector === filterLower || rowSimple === filterSimple
+                    })
                 }
 
                 // Merge with Supabase data
@@ -217,60 +223,35 @@ function Pending({ user }) {
                 // Continue with Supabase data only
             }
 
-            // For cashiers, filter by their assigned collectors
-            // Cashiers should only see pending items for collectors assigned to them
-            if (user?.role?.toLowerCase() === 'cashier') {
-                console.log('=== CASHIER FILTERING DEBUG ===')
-                console.log('User:', user)
-                console.log('Assigned Collectors:', user?.assigned_collectors)
-                console.log('Type of assigned_collectors:', typeof user?.assigned_collectors)
-                console.log('All items before filter:', allItems.length)
-                console.log('Sample collectors in items:', allItems.slice(0, 5).map(i => i.collector))
+            // Filter for cashiers based on their assigned collectors (case-insensitive)
+            if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
+                console.log('🔍 Filtering pending items for cashier:', user.fullname)
+                console.log('📋 Assigned collectors:', user.assigned_collectors)
+                console.log('📊 Items before filtering:', allItems.length)
 
-                let assignedCollectors = user?.assigned_collectors
+                // Debug: Show all collectors in the data before filtering
+                const allCollectorsInData = [...new Set(allItems.map(item => item.collector).filter(Boolean))]
+                console.log('🔍 All collectors in data before filtering:', allCollectorsInData)
 
-                // Handle case where assigned_collectors might be stored as string (old data)
-                if (typeof assignedCollectors === 'string') {
-                    try {
-                        assignedCollectors = JSON.parse(assignedCollectors)
-                    } catch (e) {
-                        console.error('Failed to parse assigned_collectors:', e)
-                        assignedCollectors = []
+                // Convert assigned collectors to lowercase for case-insensitive comparison
+                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase())
+
+                allItems = allItems.filter(item => {
+                    const itemCollectorLower = (item.collector || '').toLowerCase()
+                    const isAssigned = assignedCollectorsLower.includes(itemCollectorLower)
+                    if (!isAssigned && item.collector) {
+                        console.log(`❌ Filtering out item with collector: "${item.collector}"`)
                     }
-                }
+                    return isAssigned
+                })
 
-                if (assignedCollectors && Array.isArray(assignedCollectors) && assignedCollectors.length > 0) {
-                    console.log('Filtering for collectors:', assignedCollectors)
-                    allItems = allItems.filter(item => {
-                        const isMatch = assignedCollectors.includes(item.collector)
-                        if (!isMatch && allItems.indexOf(item) < 5) {
-                            console.log(`Item collector "${item.collector}" not in assigned list:`, assignedCollectors)
-                        }
-                        return isMatch
-                    })
-                    console.log('Items after filter:', allItems.length)
-
-                    if (allItems.length === 0) {
-                        console.warn('⚠️ No pending items found for assigned collectors. This could mean:')
-                        console.warn('1. No pending items exist for these collectors')
-                        console.warn('2. Collector names in database don\'t match exactly')
-                        console.warn('3. You need to log out and log back in to refresh your user data')
-                    }
-                } else {
-                    console.log('❌ No assigned collectors found for cashier')
-                    console.log('Please contact admin to assign collectors to your account, then log out and log back in')
-                }
+                console.log(`✅ Items after filtering: ${allItems.length}`)
             }
 
-            // Sort by draw_date (most recent first) and limit to top 10
-            allItems.sort((a, b) => {
-                const dateA = new Date(a.draw_date || 0)
-                const dateB = new Date(b.draw_date || 0)
-                return dateB - dateA // Descending order (newest first)
-            })
-
-            // Limit to top 10 most recent items
-            allItems = allItems.slice(0, 10)
+            // Debug: Log all unique collectors
+            const uniqueCollectors = [...new Set(allItems.map(item => item.collector).filter(Boolean))]
+            console.log('📋 All unique collectors in data:', uniqueCollectors)
+            console.log('📊 Total items loaded:', allItems.length)
 
             setItems(allItems)
         } catch (error) {
@@ -353,7 +334,7 @@ function Pending({ user }) {
                         Pending Items
                     </h1>
                     <p className="text-gray-600 mt-1">
-                        Top 10 Most Recent - Items overdue by more than 3 days (from Supabase & Google Sheets)
+                        Items overdue by more than 3 days (from Supabase & Google Sheets)
                         {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') &&
                             <span className="block text-sm text-orange-600 font-medium mt-1">Grouped by Collector</span>
                         }
@@ -393,7 +374,7 @@ function Pending({ user }) {
                                 id="pending-search"
                                 name="search"
                                 type="text"
-                                placeholder="Search by name or bet number..."
+                                placeholder="Search by name, bet number, or collector..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -428,6 +409,8 @@ function Pending({ user }) {
                                         value={filterCollector}
                                         onChange={(e) => setFilterCollector(e.target.value)}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
+                                        size="1"
+                                        style={{ maxHeight: '200px' }}
                                     >
                                         <option value="">All Collectors</option>
                                         {collectors.map(collector => (
@@ -484,8 +467,8 @@ function Pending({ user }) {
                                     </td>
                                 </tr>
                             ) : (
-                                // For admin, specialist, and cashier: group by collector
-                                (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist' || user?.role?.toLowerCase() === 'cashier') ? (
+                                // For admin and specialist: group by collector
+                                (user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') ? (
                                     Object.keys(groupedByCollector).sort().map(collectorName => {
                                         const collectorItems = groupedByCollector[collectorName]
 

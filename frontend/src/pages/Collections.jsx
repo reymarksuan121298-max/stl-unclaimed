@@ -29,7 +29,13 @@ function Collections({ user }) {
             setLoading(true)
             const filters = {}
             if (filterFranchise) filters.franchise_name = filterFranchise
-            if (filterCollector) filters.collector = filterCollector
+
+            // Priority: Filter input > User's own records if collector
+            if (filterCollector) {
+                filters.collector = filterCollector
+            } else if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                filters.collector = user.username
+            }
 
             const data = await dataHelpers.getCollections(filters)
             setItems(data)

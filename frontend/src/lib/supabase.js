@@ -464,18 +464,31 @@ export const dataHelpers = {
     getDashboardStats: async (user = null) => {
         // For cashiers, only count cash items
         const isCashier = user?.role?.toLowerCase() === 'cashier'
+        const isCollector = user?.role?.toLowerCase() === 'collector'
+
+        let unclaimedQuery = supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected'])
+        let pendingQuery = supabase.from('Pending').select('*', { count: 'exact', head: true })
+        let collectionsQuery = supabase.from('OverAllCollections').select('net')
+        let reportsQuery = supabase.from('Reports').select('amount')
+
+        if (isCashier) {
+            unclaimedQuery = unclaimedQuery.eq('mode', 'Cash')
+            pendingQuery = pendingQuery.eq('mode', 'Cash')
+            collectionsQuery = collectionsQuery.eq('mode', 'Cash')
+        }
+
+        if (isCollector && user?.username) {
+            unclaimedQuery = unclaimedQuery.eq('collector', user.username)
+            pendingQuery = pendingQuery.eq('collector', user.username)
+            collectionsQuery = collectionsQuery.eq('collector', user.username)
+            reportsQuery = reportsQuery.eq('collector', user.username)
+        }
 
         const [unclaimed, pending, collections, reports] = await Promise.all([
-            isCashier
-                ? supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected']).eq('mode', 'Cash')
-                : supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected']),
-            isCashier
-                ? supabase.from('Pending').select('*', { count: 'exact', head: true }).eq('mode', 'Cash')
-                : supabase.from('Pending').select('*', { count: 'exact', head: true }),
-            isCashier
-                ? supabase.from('OverAllCollections').select('net').eq('mode', 'Cash')
-                : supabase.from('OverAllCollections').select('net'),
-            supabase.from('Reports').select('amount')
+            unclaimedQuery,
+            pendingQuery,
+            collectionsQuery,
+            reportsQuery
         ])
 
         const totalRevenue = collections.data?.reduce((sum, item) => sum + parseFloat(item.net || 0), 0) || 0
