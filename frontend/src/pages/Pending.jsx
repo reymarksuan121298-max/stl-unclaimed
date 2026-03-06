@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Clock, Search, Filter, AlertTriangle, RefreshCw, Trash2, Download } from 'lucide-react'
 import { dataHelpers } from '../lib/supabase'
 import { googleSheetsHelpers } from '../lib/googleSheets'
