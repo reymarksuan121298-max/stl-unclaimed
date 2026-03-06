@@ -450,7 +450,7 @@ function Pending({ user }) {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Code</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Bet Amount</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Win Amount</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Collector</th>
+
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Notification</th>
                                 {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
@@ -461,7 +461,7 @@ function Pending({ user }) {
                         <tbody className="divide-y divide-gray-200">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="10" className="px-6 py-12 text-center">
+                                    <td colSpan="9" className="px-6 py-12 text-center">
                                         <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                         <p className="text-gray-500">No pending items found</p>
                                     </td>
@@ -473,10 +473,10 @@ function Pending({ user }) {
                                         const collectorItems = groupedByCollector[collectorName]
 
                                         return (
-                                            <>
+                                            <React.Fragment key={`group-${collectorName}`}>
                                                 {/* Collector Header Row */}
                                                 <tr key={`header-${collectorName}`}>
-                                                    <td colSpan="10" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3">
+                                                    <td colSpan="9" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3">
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-xl font-bold text-white uppercase tracking-wide">
                                                                 {collectorName}
@@ -504,7 +504,7 @@ function Pending({ user }) {
                                                     const category = getOverdueCategory(item.days_overdue || 0)
                                                     const isOverdue = item.days_overdue >= 3
                                                     return (
-                                                        <tr key={item.id} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                                        <tr key={`${item.source || 'db'}-${item.id}`} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                                                             <td className="px-6 py-4">
                                                                 <div className="font-medium text-gray-900">{item.teller_name}</div>
                                                             </td>
@@ -525,7 +525,7 @@ function Pending({ user }) {
                                                                     ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
+
                                                             <td className="px-6 py-4">
                                                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
                                                                     item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
@@ -559,7 +559,7 @@ function Pending({ user }) {
                                                         </tr>
                                                     )
                                                 })}
-                                            </>
+                                            </React.Fragment>
                                         )
                                     })
                                 ) : (
@@ -568,7 +568,7 @@ function Pending({ user }) {
                                         const category = getOverdueCategory(item.days_overdue || 0)
                                         const isOverdue = item.days_overdue >= 3
                                         return (
-                                            <tr key={item.id} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                            <tr key={`${item.source || 'db'}-${item.id}`} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
                                                 <td className="px-6 py-4">
                                                     <div className="font-medium text-gray-900">{item.teller_name}</div>
                                                 </td>
@@ -589,7 +589,7 @@ function Pending({ user }) {
                                                         ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">{item.collector || 'N/A'}</td>
+
                                                 <td className="px-6 py-4">
                                                     <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
                                                         item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
