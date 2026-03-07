@@ -234,13 +234,14 @@ function Pending({ user }) {
                 console.log('🔍 All collectors in data before filtering:', allCollectorsInData)
 
                 // Convert assigned collectors to lowercase for case-insensitive comparison
-                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase())
+                // Strip @BRANCH suffix if present (e.g. "CAMILOJAYMINOZA@GFLDN" -> "camilojayminoza")
+                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase().split('@')[0].trim())
 
                 allItems = allItems.filter(item => {
-                    const itemCollectorLower = (item.collector || '').toLowerCase()
+                    const itemCollectorLower = (item.collector || '').toLowerCase().split('@')[0].trim()
                     const isAssigned = assignedCollectorsLower.includes(itemCollectorLower)
                     if (!isAssigned && item.collector) {
-                        console.log(`❌ Filtering out item with collector: "${item.collector}"`)
+                        console.log(`❌ Filtering out item with collector: "${item.collector}" (normalized: "${itemCollectorLower}")`)
                     }
                     return isAssigned
                 })
@@ -562,10 +563,75 @@ function Pending({ user }) {
                                             </React.Fragment>
                                         )
                                     })
+                                ) : user?.role?.toLowerCase() === 'cashier' ? (
+                                    // For cashier: group by collector (assigned collectors only)
+                                    Object.keys(groupedByCollector).sort().map(collectorName => {
+                                        const collectorItems = groupedByCollector[collectorName]
+                                        return (
+                                            <React.Fragment key={`group-${collectorName}`}>
+                                                {/* Collector Header Row */}
+                                                <tr>
+                                                    <td colSpan="9" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xl font-bold text-white uppercase tracking-wide">
+                                                                {collectorName}
+                                                            </span>
+                                                            <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
+                                                                {allGroupedByCollector[collectorName]?.length || 0} item(s)
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {/* Collector Items */}
+                                                {collectorItems.map((item) => {
+                                                    const isOverdue = item.days_overdue >= 3
+                                                    return (
+                                                        <tr key={`${item.source || 'db'}-${item.id}`} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
+                                                            <td className="px-6 py-4">
+                                                                <div className="font-medium text-gray-900">{item.teller_name}</div>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                                {item.draw_date || 'N/A'}
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">{item.bet_number ?? 'N/A'}</td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
+                                                                    {item.bet_code || 'N/A'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                                ₱{parseFloat(item.bet_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className="font-semibold text-green-600">
+                                                                    ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' : item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                                    {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-6 py-4">
+                                                                {item.days_overdue >= 3 ? (
+                                                                    <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-bold animate-pulse">
+                                                                        For Deactivation
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-semibold">
+                                                                        Warning ({item.days_overdue} days)
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    )
+                                                })}
+                                            </React.Fragment>
+                                        )
+                                    })
                                 ) : (
-                                    // For collector role: show items without grouping (already filtered by their name)
+                                    // For collector role: flat list (already filtered to their own items)
                                     currentItems.map((item) => {
-                                        const category = getOverdueCategory(item.days_overdue || 0)
                                         const isOverdue = item.days_overdue >= 3
                                         return (
                                             <tr key={`${item.source || 'db'}-${item.id}`} className={`transition-colors ${isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}`}>
@@ -589,12 +655,8 @@ function Pending({ user }) {
                                                         ₱{parseFloat(item.win_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                                                     </span>
                                                 </td>
-
                                                 <td className="px-6 py-4">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
-                                                        item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
-                                                            'bg-yellow-100 text-yellow-800'
-                                                        }`}>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' : item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                                         {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
                                                     </span>
                                                 </td>
@@ -609,17 +671,6 @@ function Pending({ user }) {
                                                         </span>
                                                     )}
                                                 </td>
-                                                {(user?.role?.toLowerCase() === 'admin' || user?.role?.toLowerCase() === 'specialist') && (
-                                                    <td className="px-6 py-4">
-                                                        <button
-                                                            onClick={() => handleDelete(item)}
-                                                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Remove (Returned to Cashier)"
-                                                        >
-                                                            <Trash2 className="w-5 h-5" />
-                                                        </button>
-                                                    </td>
-                                                )}
                                             </tr>
                                         )
                                     })

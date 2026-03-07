@@ -109,13 +109,14 @@ export const googleSheetsHelpers = {
                 console.log('📋 Assigned collectors:', user.assigned_collectors)
 
                 // Convert assigned collectors to lowercase for case-insensitive comparison
-                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase())
+                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase().split('@')[0].trim())
 
                 transformedData = transformedData.filter(item => {
-                    const itemCollectorLower = (item.collector || '').toLowerCase()
+                    // Strip @BRANCH suffix (e.g. "CAMILOJAYMINOZA@GFLDN" -> "camilojayminoza")
+                    const itemCollectorLower = (item.collector || '').toLowerCase().split('@')[0].trim()
                     const isAssigned = assignedCollectorsLower.includes(itemCollectorLower)
                     if (!isAssigned && item.collector) {
-                        console.log(`❌ Filtering out item with collector: "${item.collector}"`)
+                        console.log(`❌ Filtering out item with collector: "${item.collector}" (normalized: "${itemCollectorLower}")`)
                     }
                     return isAssigned
                 })
