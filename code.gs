@@ -388,35 +388,84 @@ function formatDrawDate(dateValue) {
  */
 function doPost(e) {
     try {
-        const params = JSON.parse(e.postData.contents);
-        const ss = SpreadsheetApp.getActiveSpreadsheet();
-
-        // Use the first sheet by default or specified sheet
-        const sheetName = params.sheetName || CONFIG.SHEET_NAMES[0];
-        const sheet = ss.getSheetByName(sheetName);
-
-        if (!sheet) {
-            throw new Error(`Sheet "${sheetName}" not found`);
+        // Handle Deposit All action from the mobile app
+        if (e.parameter && e.parameter.action === 'deposit_collector') {
+            const collectorName = (e.parameter.collector || '').toLowerCase().trim();
+            const collectorSimple = collectorName.split('@')[0].replace(/\s+/g, '');
+            
+            const ss = SpreadsheetApp.getActiveSpreadsheet();
+            let updatedCount = 0;
+            
+            CONFIG.SHEET_NAMES.forEach(sheetName => {
+                const sheet = ss.getSheetByName(sheetName);
+                if (!sheet) return;
+                
+                const lastRow = sheet.getLastRow();
+                if (lastRow < CONFIG.DATA_START_ROW) return;
+                
+                // Fetch all data for this sheet
+                const dataRange = sheet.getRange(CONFIG.DATA_START_ROW, 1, lastRow - CONFIG.HEADER_ROW, 10);
+                const values = dataRange.getValues();
+                
+                // Process each row to check if it belongs to the collector and is pending
+                for (let i = 0; i < values.length; i++) {
+                    const rowCollector = String(values[i][CONFIG.COLUMNS.COLLECTOR - 1] || '').trim().toLowerCase();
+                    const rowStatus = String(values[i][CONFIG.COLUMNS.STATUS - 1] || '').trim().toLowerCase();
+                    
+                    const rowSimple = rowCollector.split('@')[0].replace(/\s+/g, '');
+                    const matchesCollector = (rowCollector === collectorName || rowSimple === collectorSimple);
+                    
+                    const isPending = (rowStatus === 'pending' || rowStatus === 'unclaimed' || rowStatus === '');
+                    
+                    if (matchesCollector && isPending) {
+                        // Mark as Deposited
+                        sheet.getRange(CONFIG.DATA_START_ROW + i, CONFIG.COLUMNS.STATUS).setValue('Deposited');
+                        updatedCount++;
+                    }
+                }
+            });
+            
+            return jsonResponse({
+                success: true,
+                message: `Marked ${updatedCount} items as Deposited`,
+                updated: updatedCount
+            });
         }
 
-        sheet.appendRow([
-            params.tellerName || '',
-            params.transCode || '',
-            params.drawTime || '',
-            params.betNumber || '',
-            params.betCode || '',
-            params.betAmount || 0,
-            params.winAmount || 0,
-            params.collector || '',
-            params.status || 'pending',
-            params.notification || ''
-        ]);
+        // Fallback for appending new rows via JSON
+        if (e.postData && e.postData.contents) {
+            const params = JSON.parse(e.postData.contents);
+            const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-        return jsonResponse({
-            success: true,
-            message: 'Record added successfully',
-            sheetName: sheetName
-        });
+            // Use the first sheet by default or specified sheet
+            const sheetName = params.sheetName || CONFIG.SHEET_NAMES[0];
+            const sheet = ss.getSheetByName(sheetName);
+
+            if (!sheet) {
+                throw new Error(`Sheet "${sheetName}" not found`);
+            }
+
+            sheet.appendRow([
+                params.tellerName || '',
+                params.transCode || '',
+                params.drawTime || '',
+                params.betNumber || '',
+                params.betCode || '',
+                params.betAmount || 0,
+                params.winAmount || 0,
+                params.collector || '',
+                params.status || 'pending',
+                params.notification || ''
+            ]);
+
+            return jsonResponse({
+                success: true,
+                message: 'Record added successfully',
+                sheetName: sheetName
+            });
+        }
+        
+        return jsonResponse({ success: false, error: 'No valid action provided' });
 
     } catch (error) {
         return jsonResponse({ success: false, error: error.message });

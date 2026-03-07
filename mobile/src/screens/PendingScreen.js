@@ -25,7 +25,7 @@ const StatusBadge = ({ days }) => {
 }
 
 // ── Collector section header ──────────────────────────────────────────────────
-const CollectorHeader = ({ name, count, onDownload }) => (
+const CollectorHeader = ({ name, count, onDownload, onDeposit, isCashier }) => (
     <View style={styles.collectorHeader}>
         <View style={{ flex: 1 }}>
             <Text style={styles.collectorName}>{name}</Text>
@@ -35,11 +35,19 @@ const CollectorHeader = ({ name, count, onDownload }) => (
                 </View>
             </View>
         </View>
-        <TouchableOpacity style={styles.downloadBtn} onPress={onDownload} activeOpacity={0.7}>
-            <Text style={styles.downloadBtnText}>📥 Download</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 6 }}>
+            {isCashier && (
+                <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: '#10b981', borderColor: 'rgba(255,255,255,0.3)' }]} onPress={onDeposit} activeOpacity={0.7}>
+                    <Text style={styles.downloadBtnText}>✅ Deposit All</Text>
+                </TouchableOpacity>
+            )}
+            <TouchableOpacity style={styles.downloadBtn} onPress={onDownload} activeOpacity={0.7}>
+                <Text style={styles.downloadBtnText}>📥 Save</Text>
+            </TouchableOpacity>
+        </View>
     </View>
 )
+
 
 // ── Pending item card ─────────────────────────────────────────────────────────
 const PendingCard = ({ item }) => {
@@ -224,12 +232,44 @@ export default function PendingScreen() {
         }
     };
 
+    const handleDeposit = (collectorKey) => {
+        Alert.alert(
+            "Confirm Deposit",
+            `Are you sure you want to mark all pending items for ${collectorKey} as deposited?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Yes, Deposit All",
+                    onPress: async () => {
+                        try {
+                            setRefreshing(true)
+                            const success = await googleSheetsHelpers.markCollectorDeposited(collectorKey)
+                            if (success) {
+                                Alert.alert("Success", `Pending items for ${collectorKey} marked as deposited.`)
+                                loadData()
+                            } else {
+                                Alert.alert("Error", "Could not confirm update with Google Sheets.")
+                                setRefreshing(false)
+                            }
+                        } catch (err) {
+                            Alert.alert("Error", err.message)
+                            setRefreshing(false)
+                        }
+                    }
+                }
+            ]
+        )
+    }
+
     const renderItem = ({ item: row }) => {
         if (row.type === 'header') {
+            const isCashier = user?.role?.toLowerCase() === 'cashier'
             return <CollectorHeader
                 name={row.name}
                 count={row.count}
+                isCashier={isCashier}
                 onDownload={() => handleSaveImage(row.name, grouped[row.fullCollectorKey])}
+                onDeposit={() => handleDeposit(row.fullCollectorKey)}
             />
         }
         return <PendingCard item={row.item} />

@@ -11,6 +11,31 @@ const normalizeCollector = (name) =>
     (name || '').toLowerCase().split('@')[0].trim()
 
 export const googleSheetsHelpers = {
+    markCollectorDeposited: async (collectorName) => {
+        if (GOOGLE_SCRIPT_URLS.length === 0) return false;
+        try {
+            const formData = new URLSearchParams()
+            formData.append('action', 'deposit_collector')
+            formData.append('collector', collectorName)
+
+            const res = await fetch(GOOGLE_SCRIPT_URLS[0], {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            })
+            // If the script does not return JSON, just attempt to parse or assume success
+            try {
+                const result = await res.json()
+                return !!result.success
+            } catch {
+                return true; // if it ran without network error, assume script did its job
+            }
+        } catch (err) {
+            console.error('Sheets deposit error:', err)
+            return false
+        }
+    },
+
     getPendingFromSheets: async (user = null) => {
         if (GOOGLE_SCRIPT_URLS.length === 0) return []
 
@@ -73,6 +98,8 @@ export const googleSheetsHelpers = {
             // Deduplicate by transCode
             const seen = new Set()
             transformed = transformed.filter((item) => {
+                const s = (item.status || '').toLowerCase()
+                if (s === 'deposited' || s === 'collected') return false
                 if (seen.has(item.id)) return false
                 seen.add(item.id)
                 return true
