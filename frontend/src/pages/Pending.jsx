@@ -178,17 +178,23 @@ function Pending({ user }) {
             setLoading(true)
             const filters = {}
             if (filterFranchise) filters.franchise_name = filterFranchise
-            if (filterCollector) filters.collector = filterCollector
 
-            // Auto-filter by collector's username if user is a collector
+            // For collector: always filter by their own username
             if (user?.role?.toLowerCase() === 'collector' && user?.username) {
                 filters.collector = user.username
+            } else if (filterCollector) {
+                // If a specific collector is selected in the dropdown
+                filters.collector = filterCollector
+            } else if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
+                // For cashier with no specific filter selected: fetch all assigned collectors
+                filters.collectors = user.assigned_collectors
             }
 
             // Fetch from both sources in parallel
+            // Pass user for initial filtering in googleSheetsHelpers if needed
             const [supabaseData, sheetsData] = await Promise.allSettled([
                 dataHelpers.getPending(filters),
-                googleSheetsHelpers.getPendingFromSheets(user) // Pass user for filtering
+                googleSheetsHelpers.getPendingFromSheets(user)
             ])
 
             // Process Supabase data
@@ -201,9 +207,10 @@ function Pending({ user }) {
 
             // Process Google Sheets data
             if (sheetsData.status === 'fulfilled') {
-                // Filter sheets data if needed
                 let filteredSheetsData = sheetsData.value
 
+                // Apply collector filter to Sheets data if selected
+                // (googleSheetsHelpers already applies cashier's assigned_collectors filter)
                 if (filters.collector) {
                     const filterLower = filters.collector.toLowerCase().trim()
                     const filterSimple = filterLower.split('@')[0].replace(/\s+/g, '')
@@ -220,44 +227,21 @@ function Pending({ user }) {
                 allItems = [...allItems, ...filteredSheetsData]
             } else {
                 console.warn('Could not load from Google Sheets:', sheetsData.reason?.message)
-                // Continue with Supabase data only
             }
 
-            // Filter for cashiers based on their assigned collectors (case-insensitive)
+            // Final safety filter for cashiers based on assigned collectors
             if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
-                console.log('🔍 Filtering pending items for cashier:', user.fullname)
-                console.log('📋 Assigned collectors:', user.assigned_collectors)
-                console.log('📊 Items before filtering:', allItems.length)
-
-                // Debug: Show all collectors in the data before filtering
-                const allCollectorsInData = [...new Set(allItems.map(item => item.collector).filter(Boolean))]
-                console.log('🔍 All collectors in data before filtering:', allCollectorsInData)
-
-                // Convert assigned collectors to lowercase for case-insensitive comparison
-                // Strip @BRANCH suffix if present (e.g. "CAMILOJAYMINOZA@GFLDN" -> "camilojayminoza")
                 const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase().split('@')[0].trim())
 
                 allItems = allItems.filter(item => {
                     const itemCollectorLower = (item.collector || '').toLowerCase().split('@')[0].trim()
-                    const isAssigned = assignedCollectorsLower.includes(itemCollectorLower)
-                    if (!isAssigned && item.collector) {
-                        console.log(`❌ Filtering out item with collector: "${item.collector}" (normalized: "${itemCollectorLower}")`)
-                    }
-                    return isAssigned
+                    return assignedCollectorsLower.includes(itemCollectorLower)
                 })
-
-                console.log(`✅ Items after filtering: ${allItems.length}`)
             }
-
-            // Debug: Log all unique collectors
-            const uniqueCollectors = [...new Set(allItems.map(item => item.collector).filter(Boolean))]
-            console.log('📋 All unique collectors in data:', uniqueCollectors)
-            console.log('📊 Total items loaded:', allItems.length)
 
             setItems(allItems)
         } catch (error) {
             console.error('Error loading pending:', error)
-            console.error('Error details:', error.message, error)
             alert('Error loading pending items: ' + (error.message || 'Unknown error'))
         } finally {
             setLoading(false)
@@ -576,9 +560,19 @@ function Pending({ user }) {
                                                             <span className="text-xl font-bold text-white uppercase tracking-wide">
                                                                 {collectorName}
                                                             </span>
-                                                            <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
-                                                                {allGroupedByCollector[collectorName]?.length || 0} item(s)
-                                                            </span>
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="text-sm text-white bg-white/20 px-3 py-1 rounded-full">
+                                                                    {allGroupedByCollector[collectorName]?.length || 0} item(s)
+                                                                </span>
+                                                                <button
+                                                                    onClick={() => downloadCollectorImage(collectorName, allGroupedByCollector[collectorName] || [])}
+                                                                    className="flex items-center gap-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                                                                    title="Download as Image"
+                                                                >
+                                                                    <Download className="w-4 h-4" />
+                                                                    <span className="text-sm font-medium">Download</span>
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </td>
                                                 </tr>

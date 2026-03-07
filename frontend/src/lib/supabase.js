@@ -310,7 +310,13 @@ export const dataHelpers = {
             .order('days_overdue', { ascending: false })
 
         if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
-        if (filters.collector) query = query.eq('collector', filters.collector)
+
+        if (filters.collector) {
+            query = query.eq('collector', filters.collector)
+        } else if (filters.collectors && Array.isArray(filters.collectors)) {
+            // Handle array of collectors for cashier's assigned collectors view
+            query = query.in('collector', filters.collectors)
+        }
 
         const { data, error } = await query
         if (error) throw error

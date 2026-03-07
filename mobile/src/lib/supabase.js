@@ -58,7 +58,11 @@ export const dataHelpers = {
             .select('*')
             .order('days_overdue', { ascending: false })
 
-        if (filters.collector) query = query.eq('collector', filters.collector)
+        if (filters.collector) {
+            query = query.eq('collector', filters.collector)
+        } else if (filters.collectors && Array.isArray(filters.collectors)) {
+            query = query.in('collector', filters.collectors)
+        }
 
         const { data, error } = await query
         if (error) throw error

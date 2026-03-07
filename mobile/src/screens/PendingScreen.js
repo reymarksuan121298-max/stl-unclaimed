@@ -4,7 +4,8 @@ import {
     TextInput, TouchableOpacity, ActivityIndicator, Alert,
 } from 'react-native'
 import * as FileSystem from 'expo-file-system'
-import * as Sharing from 'expo-sharing'
+import * as MediaLibrary from 'expo-media-library'
+import ViewShot, { captureRef } from 'react-native-view-shot'
 import { useAuth } from '../context/AuthContext'
 import { dataHelpers } from '../lib/supabase'
 import { googleSheetsHelpers } from '../lib/googleSheets'
@@ -85,12 +86,20 @@ export default function PendingScreen() {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [search, setSearch] = useState('')
+    const [reportData, setReportData] = useState(null)
+    const viewShotRef = React.useRef(null)
 
     const loadData = useCallback(async () => {
         try {
             const filters = {}
             if (user?.role?.toLowerCase() === 'collector' && user?.username) {
                 filters.collector = user.username
+            } else if (
+                user?.role?.toLowerCase() === 'cashier' &&
+                user?.assigned_collectors &&
+                Array.isArray(user.assigned_collectors)
+            ) {
+                filters.collectors = user.assigned_collectors
             }
 
             const [supabaseRes, sheetsRes] = await Promise.allSettled([
@@ -181,22 +190,37 @@ export default function PendingScreen() {
         )
     })
 
-    const handleDownload = async (collector, collectorData) => {
+    const handleSaveImage = async (collector, collectorData) => {
         try {
-            const header = 'Agent Name,Draw Date,Bet Number,Bet Code,Win Amount,Status\n';
-            const rows = collectorData.map(item => {
-                const status = (item.days_overdue || 0) >= 3 ? 'Overdue' : 'Pending';
-                return `"${item.teller_name || ''}","${item.draw_date || ''}","${item.bet_number || ''}","${item.bet_code || ''}","${item.win_amount || 0}","${status}"`;
-            }).join('\n');
-            const csv = header + rows;
+            const { status } = await MediaLibrary.requestPermissionsAsync(true); // true = writeOnly
+            if (status !== 'granted') {
+                return Alert.alert('Permission needed', 'Please allow access to your photo gallery to save the report.');
+            }
 
-            const filename = `Pending_${collector.split('@')[0]}_${new Date().toISOString().split('T')[0]}.csv`;
-            const fileUri = FileSystem.cacheDirectory + filename;
+            setReportData({ name: collector, items: collectorData })
 
-            await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
-            await Sharing.shareAsync(fileUri);
+            // Small delay to ensure the report view renders
+            setTimeout(async () => {
+                if (!viewShotRef.current) return
+
+                try {
+                    const uri = await captureRef(viewShotRef.current, {
+                        format: 'png',
+                        quality: 0.9,
+                    })
+
+                    await MediaLibrary.saveToLibraryAsync(uri);
+
+                    Alert.alert('Success', `Report for ${collector} saved to your gallery!`);
+                } catch (saveErr) {
+                    Alert.alert('Save Error', 'Failed to save to gallery: ' + saveErr.message);
+                } finally {
+                    setReportData(null)
+                }
+            }, 500)
         } catch (err) {
-            Alert.alert('Error', 'Failed to generate report: ' + err.message);
+            Alert.alert('Error', 'Failed to generate image report: ' + err.message)
+            setReportData(null)
         }
     };
 
@@ -205,7 +229,7 @@ export default function PendingScreen() {
             return <CollectorHeader
                 name={row.name}
                 count={row.count}
-                onDownload={() => handleDownload(row.name, grouped[row.fullCollectorKey])}
+                onDownload={() => handleSaveImage(row.name, grouped[row.fullCollectorKey])}
             />
         }
         return <PendingCard item={row.item} />
@@ -254,6 +278,47 @@ export default function PendingScreen() {
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366f1']} />
                     }
                 />
+            )}
+
+            {/* Hidden ViewShot for report generation */}
+            {reportData && (
+                <View style={styles.hiddenContainer}>
+                    <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.9 }} style={styles.reportWrapper}>
+                        <View style={styles.reportHeader}>
+                            <Text style={styles.reportTitle}>PENDING ITEMS REPORT</Text>
+                            <Text style={styles.reportCollector}>{reportData.name}</Text>
+                            <Text style={styles.reportDate}>{new Date().toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
+                        </View>
+
+                        <View style={styles.reportContent}>
+                            <View style={styles.tableHeader}>
+                                <Text style={[styles.th, { flex: 2 }]}>AGENT</Text>
+                                <Text style={[styles.th, { flex: 1.5 }]}>DRAW DATE</Text>
+                                <Text style={[styles.th, { flex: 1 }]}>BET #</Text>
+                                <Text style={[styles.th, { flex: 1.2, textAlign: 'right' }]}>WIN AMT</Text>
+                            </View>
+
+                            {reportData.items.map((item, idx) => (
+                                <View key={idx} style={[styles.tableRow, idx % 2 === 0 ? styles.rowEven : null]}>
+                                    <Text style={[styles.td, { flex: 2 }]} numberOfLines={1}>{item.teller_name}</Text>
+                                    <Text style={[styles.td, { flex: 1.5 }]}>{item.draw_date}</Text>
+                                    <Text style={[styles.td, { flex: 1 }]}>{item.bet_number}</Text>
+                                    <Text style={[styles.td, { flex: 1.2, textAlign: 'right', fontWeight: 'bold' }]}>
+                                        ₱{parseFloat(item.win_amount || 0).toLocaleString()}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+
+                        <View style={styles.reportFooter}>
+                            <Text style={styles.totalLabel}>TOTAL PENDING ITEMS: {reportData.items.length}</Text>
+                            <Text style={styles.totalValue}>
+                                TOTAL AMOUNT: ₱{reportData.items.reduce((sum, item) => sum + parseFloat(item.win_amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </Text>
+                            <Text style={styles.footerNote}>Generated via STL Unclaimed App</Text>
+                        </View>
+                    </ViewShot>
+                </View>
             )}
         </View>
     )
@@ -317,4 +382,22 @@ const styles = StyleSheet.create({
     empty: { flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 },
     emptyIcon: { fontSize: 48, marginBottom: 12 },
     emptyText: { fontSize: 16, color: '#9ca3af', fontWeight: '500' },
+
+    // Report Styles
+    hiddenContainer: { position: 'absolute', left: -9999, top: 0, width: 375 },
+    reportWrapper: { backgroundColor: '#fff', padding: 25 },
+    reportHeader: { alignItems: 'center', borderBottomWidth: 2, borderBottomColor: '#6366f1', paddingBottom: 15, marginBottom: 20 },
+    reportTitle: { fontSize: 18, fontWeight: '900', color: '#1f2937', letterSpacing: 1 },
+    reportCollector: { fontSize: 22, fontWeight: '900', color: '#6366f1', marginTop: 5, textTransform: 'uppercase' },
+    reportDate: { fontSize: 12, color: '#6b7280', marginTop: 5 },
+    reportContent: { marginBottom: 20 },
+    tableHeader: { flexDirection: 'row', backgroundColor: '#f3f4f6', padding: 10, borderRadius: 6 },
+    th: { fontSize: 10, fontWeight: '800', color: '#4b5563' },
+    tableRow: { flexDirection: 'row', padding: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+    rowEven: { backgroundColor: '#fafafa' },
+    td: { fontSize: 11, color: '#1f2937' },
+    reportFooter: { borderTopWidth: 2, borderTopColor: '#f3f4f6', paddingTop: 15, alignItems: 'center' },
+    totalLabel: { fontSize: 12, fontWeight: '700', color: '#4b5563', marginBottom: 5 },
+    totalValue: { fontSize: 20, fontWeight: '900', color: '#059669', marginBottom: 10 },
+    footerNote: { fontSize: 10, fontStyle: 'italic', color: '#9ca3af' },
 })
