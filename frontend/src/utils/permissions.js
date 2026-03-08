@@ -1,0 +1,114 @@
+// Permission definitions for role-based access control
+export const PERMISSIONS = {
+    // Page View permissions
+    VIEW_DASHBOARD: 'view_dashboard',
+    VIEW_UNCLAIMED: 'view_unclaimed_items',
+    VIEW_PENDING: 'view_pending',
+    VIEW_COLLECTIONS: 'view_collections',
+    VIEW_REPORTS: 'view_reports',
+    VIEW_USERS: 'view_users',
+
+    // Action permissions
+    CREATE_UNCLAIMED: 'create_unclaimed',
+    UPDATE_UNCLAIMED: 'update_unclaimed',
+    DELETE_UNCLAIMED: 'delete_unclaimed',
+    MARK_AS_COLLECTED: 'mark_as_collected',
+
+    // User permissions
+    CREATE_USER: 'create_user',
+    UPDATE_USER: 'update_user',
+    DELETE_USER: 'delete_user',
+    MANAGE_USERS: 'manage_users',
+
+    // Reports actions
+    EXPORT_REPORTS: 'export_reports',
+
+    // Cashier permissions
+    DEPOSIT_CASH: 'deposit_cash',
+    VIEW_CASH_DEPOSITS: 'view_cash_deposits',
+}
+
+// Role-based permission mapping
+const rolePermissions = {
+    'admin': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.VIEW_REPORTS,
+        PERMISSIONS.VIEW_USERS,
+        PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.UPDATE_UNCLAIMED,
+        PERMISSIONS.DELETE_UNCLAIMED,
+        PERMISSIONS.MARK_AS_COLLECTED,
+        PERMISSIONS.CREATE_USER,
+        PERMISSIONS.UPDATE_USER,
+        PERMISSIONS.DELETE_USER,
+        PERMISSIONS.MANAGE_USERS,
+        PERMISSIONS.EXPORT_REPORTS,
+    ],
+    'specialist': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.VIEW_REPORTS,
+        PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.UPDATE_UNCLAIMED,
+        PERMISSIONS.DELETE_UNCLAIMED,
+        PERMISSIONS.MARK_AS_COLLECTED,
+        PERMISSIONS.EXPORT_REPORTS,
+    ],
+    'collector': [
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.UPDATE_UNCLAIMED, // Allow collectors to edit their own items (receipt upload only)
+    ],
+    'checker': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.CREATE_UNCLAIMED,
+    ],
+    'staff': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_REPORTS,
+    ],
+    'general manager': [
+        PERMISSIONS.VIEW_DASHBOARD,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.VIEW_REPORTS,
+        PERMISSIONS.EXPORT_REPORTS,
+    ],
+    'cashier': [
+        PERMISSIONS.VIEW_UNCLAIMED,
+        PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.VIEW_COLLECTIONS,
+        PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.DEPOSIT_CASH,
+        PERMISSIONS.VIEW_CASH_DEPOSITS,
+        PERMISSIONS.MARK_AS_COLLECTED, // Can mark as collected after deposit
+    ],
+}
+
+// Check if user has a specific permission
+export const hasPermission = (user, permission) => {
+    if (!user || !user.role) return false
+    const userRole = user.role.toLowerCase()
+    const permissions = rolePermissions[userRole] || []
+    return permissions.includes(permission)
+}
+
+// Check if user can perform an action on a specific item
+export const canPerformAction = (user, permission, item = null) => {
+    if (!hasPermission(user, permission)) return false
+
+    // Additional checks for collectors - they can only edit their own items
+    if (user.role.toLowerCase() === 'collector' && item) {
+        if (permission === PERMISSIONS.UPDATE_UNCLAIMED) {
+            return item.collector === user.fullname
+        }
+    }
+
+    return true
+}
