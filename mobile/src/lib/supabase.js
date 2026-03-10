@@ -51,12 +51,13 @@ export const authHelpers = {
 
 // ── Data helpers ───────────────────────────────────────────────────────────────
 export const dataHelpers = {
-    // Pending items (from Supabase)
+    // Pending items (from Supabase) - Fetch ALL status='Unclaimed' items
     getPending: async (filters = {}) => {
         let query = supabase
-            .from('Pending')
+            .from('Unclaimed')
             .select('*')
-            .order('days_overdue', { ascending: false })
+            .eq('status', 'Unclaimed')
+            .order('draw_date', { ascending: true })
 
         if (filters.collector) {
             query = query.eq('collector', filters.collector)
@@ -66,7 +67,18 @@ export const dataHelpers = {
 
         const { data, error } = await query
         if (error) throw error
-        return data || []
+
+        // Calculate days_overdue on the fly matching Google Sheets logic
+        return (data || []).map(item => {
+            const drawDate = new Date(item.draw_date)
+            const diff = new Date() - drawDate
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+            return {
+                ...item,
+                days_overdue: days >= 0 ? days : 0,
+                source: 'supabase'
+            }
+        })
     },
 
     // Unclaimed items
@@ -239,7 +251,7 @@ export const dataHelpers = {
         const isCollector = user?.role?.toLowerCase() === 'collector'
 
         let unclaimedQ = supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected'])
-        let pendingQ = supabase.from('Pending').select('*', { count: 'exact', head: true })
+        let pendingQ = supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).eq('status', 'Unclaimed')
         let collectionsQ = supabase.from('OverAllCollections').select('net')
 
         if (isCashier) {

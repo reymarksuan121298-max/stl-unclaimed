@@ -25,20 +25,23 @@ const StatusBadge = ({ days }) => {
 }
 
 // ── Collector section header ──────────────────────────────────────────────────
-const CollectorHeader = ({ name, count, onDownload, onDeposit, isCashier }) => (
+const CollectorHeader = ({ name, count, total, onDownload, onDeposit, isCashier }) => (
     <View style={styles.collectorHeader}>
         <View style={{ flex: 1 }}>
             <Text style={styles.collectorName}>{name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
                 <View style={styles.countBadge}>
                     <Text style={styles.countText}>{count} item(s)</Text>
+                </View>
+                <View style={[styles.countBadge, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                    <Text style={styles.countText}>₱{total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</Text>
                 </View>
             </View>
         </View>
         <View style={{ flexDirection: 'row', gap: 6 }}>
             {isCashier && (
                 <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: '#10b981', borderColor: 'rgba(255,255,255,0.3)' }]} onPress={onDeposit} activeOpacity={0.7}>
-                    <Text style={styles.downloadBtnText}>✅ Deposit All</Text>
+                    <Text style={styles.downloadBtnText}>✅ Deposit</Text>
                 </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.downloadBtn} onPress={onDownload} activeOpacity={0.7}>
@@ -99,15 +102,19 @@ export default function PendingScreen() {
 
     const loadData = useCallback(async () => {
         try {
+            let assigned = user?.assigned_collectors || []
+            if (typeof assigned === 'string') {
+                try { assigned = JSON.parse(assigned) } catch { assigned = [] }
+            }
+
             const filters = {}
             if (user?.role?.toLowerCase() === 'collector' && user?.username) {
                 filters.collector = user.username
             } else if (
                 user?.role?.toLowerCase() === 'cashier' &&
-                user?.assigned_collectors &&
-                Array.isArray(user.assigned_collectors)
+                assigned && Array.isArray(assigned)
             ) {
-                filters.collectors = user.assigned_collectors
+                filters.collectors = assigned
             }
 
             const [supabaseRes, sheetsRes] = await Promise.allSettled([
@@ -166,16 +173,21 @@ export default function PendingScreen() {
         )
     })
 
-    // Group by collector
+    // Group by collector (normalized name for merging @GFLDN etc)
     const grouped = {}
     filtered.forEach((item) => {
+        // We Use the collector field as-is for the key to preserve branch info if needed,
+        // or we can normalize it to merge. Common request is to merge by base name.
         const key = item.collector || 'Unassigned'
-        if (!grouped[key]) grouped[key] = []
-        grouped[key].push(item)
+        if (!grouped[key]) grouped[key] = { items: [], total: 0 }
+        grouped[key].items.push(item)
+        grouped[key].total += parseFloat(item.win_amount || 0)
     })
+
     const sections = Object.keys(grouped).sort().map((key) => ({
         collector: key,
-        data: grouped[key],
+        data: grouped[key].items,
+        total: grouped[key].total
     }))
 
     // Build a flat list: [{ type:'header', ... }, { type:'item', ... }, ...]
@@ -191,7 +203,8 @@ export default function PendingScreen() {
             key: `h-${section.collector}`,
             name: displayName,
             fullCollectorKey: section.collector,
-            count: section.data.length
+            count: section.data.length,
+            total: section.total
         })
         section.data.forEach((item) =>
             listData.push({ type: 'item', key: `i-${item.source || 'db'}-${item.id}`, item })
@@ -267,8 +280,9 @@ export default function PendingScreen() {
             return <CollectorHeader
                 name={row.name}
                 count={row.count}
+                total={row.total}
                 isCashier={isCashier}
-                onDownload={() => handleSaveImage(row.name, grouped[row.fullCollectorKey])}
+                onDownload={() => handleSaveImage(row.name, grouped[row.fullCollectorKey].items)}
                 onDeposit={() => handleDeposit(row.fullCollectorKey)}
             />
         }
@@ -295,9 +309,16 @@ export default function PendingScreen() {
                         <Text style={styles.summaryText}>
                             {user?.role?.toLowerCase() === 'collector'
                                 ? `${filtered.length} pending item(s)`
-                                : `${filtered.length} item(s) · ${sections.length} collector(s)`}
+                                : `${filtered.length} item(s) across ${sections.length} collector(s)`}
                         </Text>
                     </View>
+                    {filtered.length > 0 && (
+                        <View style={[styles.summaryPill, { backgroundColor: '#dcfce7', marginLeft: 8 }]}>
+                            <Text style={[styles.summaryText, { color: '#166534' }]}>
+                                ₱{filtered.reduce((sum, i) => sum + parseFloat(i.win_amount || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                            </Text>
+                        </View>
+                    )}
                 </View>
             )}
 

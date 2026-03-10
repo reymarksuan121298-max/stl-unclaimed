@@ -76,12 +76,17 @@ export const googleSheetsHelpers = {
             }))
 
             // Filter for cashier — only their assigned collectors, strip @BRANCH suffix
+            let assigned = user?.assigned_collectors || []
+            if (typeof assigned === 'string') {
+                try { assigned = JSON.parse(assigned) } catch { assigned = [] }
+            }
+
             if (
                 user?.role?.toLowerCase() === 'cashier' &&
-                user?.assigned_collectors &&
-                Array.isArray(user.assigned_collectors)
+                assigned &&
+                Array.isArray(assigned)
             ) {
-                const assignedLower = user.assigned_collectors.map(normalizeCollector)
+                const assignedLower = assigned.map(normalizeCollector)
                 transformed = transformed.filter((item) =>
                     assignedLower.includes(normalizeCollector(item.collector))
                 )
