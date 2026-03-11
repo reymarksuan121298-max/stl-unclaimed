@@ -54,15 +54,15 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "e973ec4f-2c82-4a21-8910-7e3a10bb719a"
+        "projectId": "f81dff30-b465-4f0a-9a3c-071be137f62d"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/e973ec4f-2c82-4a21-8910-7e3a10bb719a"
+      "url": "https://u.expo.dev/f81dff30-b465-4f0a-9a3c-071be137f62d"
     },
-    "owner": "vraizer2"
+    "owner": "kambal12345"
   }
 }
