@@ -102,8 +102,9 @@ export default function PendingScreen() {
 
     const loadData = useCallback(async () => {
         try {
+            // Parse assigned collectors (stored as JSON string in Supabase)
             let assigned = user?.assigned_collectors || []
-            if (typeof assigned === 'string') {
+            if (typeof assigned === 'string' && assigned.trim()) {
                 try { assigned = JSON.parse(assigned) } catch { assigned = [] }
             }
 
@@ -124,34 +125,31 @@ export default function PendingScreen() {
 
             let all = []
             if (supabaseRes.status === 'fulfilled') all = [...supabaseRes.value]
+            if (sheetsRes.status === 'fulfilled') all = [...all, ...sheetsRes.value]
 
-            if (sheetsRes.status === 'fulfilled') {
-                let sheetsData = sheetsRes.value
+            // FINAL ACCURACY SWEEP: ensures only assigned/own items are shown
+            let filteredResult = all
+            if (user?.role?.toLowerCase() === 'cashier') {
+                // Ensure assigned is an array (parsing from string if needed)
+                let assignedArr = user?.assigned_collectors || []
+                if (typeof assignedArr === 'string' && assignedArr.trim()) {
+                    try { assignedArr = JSON.parse(assignedArr) } catch { assignedArr = [] }
+                }
 
-                // For cashier: filter by assigned collectors (normalize @BRANCH)
-                if (
-                    user?.role?.toLowerCase() === 'cashier' &&
-                    user?.assigned_collectors &&
-                    Array.isArray(user.assigned_collectors)
-                ) {
-                    const assignedLower = user.assigned_collectors.map(normalizeCollector)
-                    sheetsData = sheetsData.filter((item) =>
+                if (Array.isArray(assignedArr) && assignedArr.length > 0) {
+                    const assignedLower = assignedArr.map(normalizeCollector)
+                    filteredResult = filteredResult.filter((item) =>
                         assignedLower.includes(normalizeCollector(item.collector))
                     )
                 }
-
-                // For collector: only their own items
-                if (user?.role?.toLowerCase() === 'collector' && user?.username) {
-                    const myName = normalizeCollector(user.username)
-                    sheetsData = sheetsData.filter((item) =>
-                        normalizeCollector(item.collector) === myName
-                    )
-                }
-
-                all = [...all, ...sheetsData]
+            } else if (user?.role?.toLowerCase() === 'collector' && user?.username) {
+                const myName = normalizeCollector(user.username)
+                filteredResult = filteredResult.filter((item) =>
+                    normalizeCollector(item.collector) === myName
+                )
             }
 
-            setItems(all)
+            setItems(filteredResult)
         } catch (err) {
             Alert.alert('Error', err.message || 'Failed to load pending items.')
         } finally {
@@ -176,16 +174,22 @@ export default function PendingScreen() {
     // Group by collector (normalized name for merging @GFLDN etc)
     const grouped = {}
     filtered.forEach((item) => {
-        // We Use the collector field as-is for the key to preserve branch info if needed,
-        // or we can normalize it to merge. Common request is to merge by base name.
-        const key = item.collector || 'Unassigned'
-        if (!grouped[key]) grouped[key] = { items: [], total: 0 }
+        // Normalize the key to merge collectors with different branch suffixes
+        const key = normalizeCollector(item.collector || 'Unassigned')
+        if (!grouped[key]) {
+            grouped[key] = {
+                items: [],
+                total: 0,
+                displayName: (item.collector || 'Unassigned').split('@')[0]
+            }
+        }
         grouped[key].items.push(item)
         grouped[key].total += parseFloat(item.win_amount || 0)
     })
 
     const sections = Object.keys(grouped).sort().map((key) => ({
-        collector: key,
+        collectorKey: key,
+        name: grouped[key].displayName,
         data: grouped[key].items,
         total: grouped[key].total
     }))
@@ -194,20 +198,16 @@ export default function PendingScreen() {
     const listData = []
     sections.forEach((section) => {
         const isCashier = user?.role?.toLowerCase() === 'cashier'
-        // For cashier — strip @BRANCH for display
-        const displayName = isCashier
-            ? section.collector.split('@')[0]
-            : section.collector
         listData.push({
             type: 'header',
-            key: `h-${section.collector}`,
-            name: displayName,
-            fullCollectorKey: section.collector,
+            key: `h-${section.collectorKey}`,
+            name: section.name,
+            collectorKey: section.collectorKey,
             count: section.data.length,
             total: section.total
         })
-        section.data.forEach((item) =>
-            listData.push({ type: 'item', key: `i-${item.source || 'db'}-${item.id}`, item })
+        section.data.forEach((item, idx) =>
+            listData.push({ type: 'item', key: `i-${item.source || 'db'}-${item.id || item.trans_id}-${idx}`, item })
         )
     })
 
@@ -282,8 +282,8 @@ export default function PendingScreen() {
                 count={row.count}
                 total={row.total}
                 isCashier={isCashier}
-                onDownload={() => handleSaveImage(row.name, grouped[row.fullCollectorKey].items)}
-                onDeposit={() => handleDeposit(row.fullCollectorKey)}
+                onDownload={() => handleSaveImage(row.name, grouped[row.collectorKey].items)}
+                onDeposit={() => handleDeposit(row.collectorKey)}
             />
         }
         return <PendingCard item={row.item} />

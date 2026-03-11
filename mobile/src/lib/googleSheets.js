@@ -100,14 +100,10 @@ export const googleSheetsHelpers = {
                 )
             }
 
-            // Deduplicate by transCode
-            const seen = new Set()
+            // Filter out completed items
             transformed = transformed.filter((item) => {
                 const s = (item.status || '').toLowerCase()
-                if (s === 'deposited' || s === 'collected') return false
-                if (seen.has(item.id)) return false
-                seen.add(item.id)
-                return true
+                return s !== 'deposited' && s !== 'collected'
             })
 
             return transformed
