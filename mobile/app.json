@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "mobile",
+    "slug": "mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/stl-logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/stl-logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/stl-logo.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "package": "com.lordshin124.mobile"
+    },
+    "web": {
+      "favicon": "./assets/stl-logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f4a3289c-5e78-4d59-a6f9-753a41fa0adc"
+      }
+    },
+    "owner": "lordshin124"
+  }
+}
