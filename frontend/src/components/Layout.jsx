@@ -10,7 +10,8 @@ import {
     MapPin,
     LogOut,
     Menu,
-    X
+    X,
+    User
 } from 'lucide-react'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -38,7 +39,8 @@ function Layout({ children, user }) {
         { name: 'Reports', href: '/reports', icon: FileText, permission: PERMISSIONS.VIEW_REPORTS },
         { name: 'Users', href: '/users', icon: Users, permission: PERMISSIONS.VIEW_USERS },
         { name: 'Areas', href: '/areas', icon: MapPin, permission: PERMISSIONS.MANAGE_USERS },
-    ].filter(item => hasPermission(user, item.permission))
+        { name: 'Profile', href: '/profile', icon: User, permission: 'authenticated' },
+    ].filter(item => item.permission === 'authenticated' || hasPermission(user, item.permission))
 
     const isActive = (path) => {
         if (path === '/') return location.pathname === '/'
@@ -62,23 +64,27 @@ function Layout({ children, user }) {
                             </div>
                         </div>
                     </div>
-
                     {/* User Info */}
-                    <div className="px-6 py-4 bg-black/10 border-y border-white/10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    <Link 
+                        to="/profile"
+                        className="px-6 py-4 bg-black/10 border-y border-white/10 flex items-center gap-3 hover:bg-black/20 transition-all group"
+                    >
+                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-all overflow-hidden border border-white/10">
+                            {user?.profile_url ? (
+                                <img src={user.profile_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
                                 <span className="text-white font-semibold text-sm">
                                     {user?.fullname?.charAt(0).toUpperCase() || 'U'}
                                 </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white truncate">{user?.fullname || 'User'}</p>
-                                <p className="text-xs text-indigo-200 truncate">
-                                    {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                </p>
-                            </div>
+                            )}
                         </div>
-                    </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate group-hover:underline">{user?.fullname || 'User'}</p>
+                            <p className="text-xs text-indigo-200 truncate">
+                                {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            </p>
+                        </div>
+                    </Link>
 
                     {/* Navigation */}
                     <nav className="flex-1 px-4 py-6 space-y-2">
@@ -168,21 +174,27 @@ function Layout({ children, user }) {
                                 </div>
 
                                 {/* User Info */}
-                                <div className="px-6 py-4 bg-black/10 border-y border-white/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                                <Link 
+                                    to="/profile"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="px-6 py-4 bg-black/10 border-y border-white/10 flex items-center gap-3 hover:bg-black/20 transition-all font-medium"
+                                >
+                                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden border border-white/10">
+                                        {user?.profile_url ? (
+                                            <img src={user.profile_url} alt="" className="w-full h-full object-cover" />
+                                        ) : (
                                             <span className="text-white font-semibold text-sm">
                                                 {user?.fullname?.charAt(0).toUpperCase() || 'U'}
                                             </span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-semibold text-white truncate">{user?.fullname || 'User'}</p>
-                                            <p className="text-xs text-indigo-200 truncate">
-                                                {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                            </p>
-                                        </div>
+                                        )}
                                     </div>
-                                </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-white truncate">{user?.fullname || 'User'}</p>
+                                        <p className="text-xs text-indigo-200 truncate">
+                                            {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                        </p>
+                                    </div>
+                                </Link>
 
                                 {/* Navigation */}
                                 <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">

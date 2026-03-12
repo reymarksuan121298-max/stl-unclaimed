@@ -231,11 +231,12 @@ function Pending({ user }) {
 
             // Final safety filter for cashiers based on assigned collectors
             if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
-                const assignedCollectorsLower = user.assigned_collectors.map(c => c.toLowerCase().split('@')[0].trim())
+                const normalize = (name) => (name || '').toLowerCase().replace(/\s+/g, '').split('@')[0].trim();
+                const assignedCollectorsNormalized = new Set(user.assigned_collectors.map(normalize))
 
                 allItems = allItems.filter(item => {
-                    const itemCollectorLower = (item.collector || '').toLowerCase().split('@')[0].trim()
-                    return assignedCollectorsLower.includes(itemCollectorLower)
+                    const itemCollectorNormalized = normalize(item.collector)
+                    return assignedCollectorsNormalized.has(itemCollectorNormalized)
                 })
             }
 
@@ -290,7 +291,9 @@ function Pending({ user }) {
     const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
-    const collectors = [...new Set(items.map(i => i.collector).filter(Boolean))].sort()
+    const collectors = user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors
+        ? [...user.assigned_collectors].sort()
+        : [...new Set(items.map(i => i.collector).filter(Boolean))].sort()
 
     const getOverdueCategory = (days) => {
         if (days <= 7) return { label: 'Recently Overdue', color: 'bg-yellow-100 text-yellow-800' }
@@ -351,7 +354,7 @@ function Pending({ user }) {
             {/* Filters */}
             {user?.role?.toLowerCase() !== 'collector' && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'cashier' ? 'md:grid-cols-1' : 'md:grid-cols-3'} gap-4`}>
+                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'cashier' ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <label htmlFor="pending-search" className="sr-only">Search items</label>
@@ -367,44 +370,42 @@ function Pending({ user }) {
                         </div>
 
                         {user?.role?.toLowerCase() !== 'cashier' && (
-                            <>
-                                <div className="relative">
-                                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <label htmlFor="pending-franchise-filter" className="sr-only">Filter by franchise</label>
-                                    <select
-                                        id="pending-franchise-filter"
-                                        name="franchise"
-                                        value={filterFranchise}
-                                        onChange={(e) => setFilterFranchise(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
-                                    >
-                                        <option value="">All Franchises</option>
-                                        {franchises.map(franchise => (
-                                            <option key={franchise} value={franchise}>{franchise}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="relative">
-                                    <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                                    <label htmlFor="pending-collector-filter" className="sr-only">Filter by collector</label>
-                                    <select
-                                        id="pending-collector-filter"
-                                        name="collector"
-                                        value={filterCollector}
-                                        onChange={(e) => setFilterCollector(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
-                                        size="1"
-                                        style={{ maxHeight: '200px' }}
-                                    >
-                                        <option value="">All Collectors</option>
-                                        {collectors.map(collector => (
-                                            <option key={collector} value={collector}>{collector}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </>
+                            <div className="relative">
+                                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                <label htmlFor="pending-franchise-filter" className="sr-only">Filter by franchise</label>
+                                <select
+                                    id="pending-franchise-filter"
+                                    name="franchise"
+                                    value={filterFranchise}
+                                    onChange={(e) => setFilterFranchise(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
+                                >
+                                    <option value="">All Franchises</option>
+                                    {franchises.map(franchise => (
+                                        <option key={franchise} value={franchise}>{franchise}</option>
+                                    ))}
+                                </select>
+                            </div>
                         )}
+
+                        <div className="relative">
+                            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                            <label htmlFor="pending-collector-filter" className="sr-only">Filter by collector</label>
+                            <select
+                                id="pending-collector-filter"
+                                name="collector"
+                                value={filterCollector}
+                                onChange={(e) => setFilterCollector(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-white"
+                                size="1"
+                                style={{ maxHeight: '200px' }}
+                            >
+                                <option value="">{user?.role?.toLowerCase() === 'cashier' ? 'All My Collectors' : 'All Collectors'}</option>
+                                {collectors.map(collector => (
+                                    <option key={collector} value={collector}>{collector}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                 </div>
             )}

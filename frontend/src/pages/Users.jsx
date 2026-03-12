@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users as UsersIcon, Search, Filter, Plus, Edit, Trash2, UserCheck, UserX, X } from 'lucide-react'
+import { Users as UsersIcon, Search, Filter, Plus, Edit, Trash2, UserCheck, UserX, X, Eye } from 'lucide-react'
 import { dataHelpers, authHelpers } from '../lib/supabase'
 
 function Users({ user }) {
@@ -12,6 +12,8 @@ function Users({ user }) {
     const [filterStatus, setFilterStatus] = useState('')
 
     const [showUserModal, setShowUserModal] = useState(false)
+    const [viewingUser, setViewingUser] = useState(null)
+    const [showViewModal, setShowViewModal] = useState(false)
     const [editingUser, setEditingUser] = useState(null)
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
@@ -314,6 +316,16 @@ function Users({ user }) {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 <button
+                                                    onClick={() => {
+                                                        setViewingUser(user)
+                                                        setShowViewModal(true)
+                                                    }}
+                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    title="View Profile"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+                                                <button
                                                     onClick={() => handleToggleStatus(user.id, user.status)}
                                                     className={`p-2 rounded-lg transition-colors ${user.status === 'active'
                                                         ? 'text-orange-600 hover:bg-orange-50'
@@ -584,6 +596,102 @@ function Users({ user }) {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* View Profile Modal */}
+            {showViewModal && viewingUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transition-all transform scale-100">
+                        {/* Modal Header/Cover */}
+                        <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-700">
+                            <button 
+                                onClick={() => setShowViewModal(false)}
+                                className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all z-10"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                            <div className="absolute -bottom-10 left-8">
+                                <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center p-1">
+                                    <div className="w-full h-full bg-indigo-50 rounded-xl flex items-center justify-center border-2 border-indigo-100">
+                                        <span className="text-3xl font-bold text-indigo-600">
+                                            {viewingUser.fullname?.charAt(0).toUpperCase()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-12 px-8 pb-8 space-y-6">
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-900">{viewingUser.fullname}</h1>
+                                <p className="text-indigo-600 font-medium text-sm flex items-center gap-1 mt-1">
+                                    @{viewingUser.username}
+                                    <span className="mx-2 text-gray-300">•</span>
+                                    {viewingUser.role.toUpperCase()}
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-6 pt-2 border-t border-gray-100">
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Contact Number</p>
+                                    <p className="text-gray-900 font-medium">{viewingUser.contact_number || 'No contact provided'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Status</p>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-bold uppercase ${
+                                        viewingUser.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                        {viewingUser.status}
+                                    </span>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Franchise</p>
+                                    <p className="text-gray-800 font-medium text-sm">{viewingUser.franchising_name || 'N/A'}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Municipality/Area</p>
+                                    <p className="text-gray-800 font-medium text-sm">{viewingUser.municipality || 'All Areas'}</p>
+                                </div>
+                            </div>
+
+                            {viewingUser.role === 'cashier' && viewingUser.assigned_collectors && (
+                                <div className="pt-4 border-t border-gray-100">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-2">Assigned Collectors</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {viewingUser.assigned_collectors.length > 0 ? (
+                                            viewingUser.assigned_collectors.map(c => (
+                                                <span key={c} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-lg border border-indigo-100 font-medium">
+                                                    {c}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-gray-500 italic">No collectors assigned</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="pt-6 flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowViewModal(false)
+                                        handleOpenModal(viewingUser)
+                                    }}
+                                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl transition-all shadow-lg hover:shadow-indigo-200 flex items-center justify-center gap-2"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                    Edit Details
+                                </button>
+                                <button
+                                    onClick={() => setShowViewModal(false)}
+                                    className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-2xl transition-all"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

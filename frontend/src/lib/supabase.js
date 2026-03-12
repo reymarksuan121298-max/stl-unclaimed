@@ -203,6 +203,34 @@ export const dataHelpers = {
         }
     },
 
+    uploadProfilePicture: async (file) => {
+        if (!file) return null
+
+        try {
+            const fileExt = file.name.split('.').pop()
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
+            const filePath = `profiles/${fileName}`
+
+            const { data, error } = await supabase.storage
+                .from('unclaimed-receipts')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                })
+
+            if (error) throw error
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('unclaimed-receipts')
+                .getPublicUrl(filePath)
+
+            return publicUrl
+        } catch (error) {
+            console.error('Upload error:', error)
+            throw error
+        }
+    },
+
     // Cash deposit operations for cashiers
     depositCash: async (id, depositData, cashierName) => {
         const { data, error } = await supabase

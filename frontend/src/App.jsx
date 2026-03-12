@@ -10,6 +10,7 @@ import CashDeposits from './pages/CashDeposits'
 import Reports from './pages/Reports'
 import Users from './pages/Users'
 import Areas from './pages/Areas'
+import Profile from './pages/Profile'
 import { authHelpers } from './lib/supabase'
 import { hasPermission, PERMISSIONS } from './utils/permissions'
 
@@ -82,6 +83,7 @@ function App() {
           <Route path="/reports" element={<ProtectedRoute element={<Reports user={user} />} permission={PERMISSIONS.VIEW_REPORTS} />} />
           <Route path="/users" element={<ProtectedRoute element={<Users user={user} />} permission={PERMISSIONS.VIEW_USERS} />} />
           <Route path="/areas" element={<ProtectedRoute element={<Areas user={user} />} permission={PERMISSIONS.MANAGE_USERS} />} />
+          <Route path="/profile" element={<Profile user={user} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
