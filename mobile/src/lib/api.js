@@ -8,21 +8,25 @@ const memoryStorage = {
   removeItem: (key) => Promise.resolve(delete memoryStorage[key]),
 };
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://qzfgworrkrosgzfwcfcy.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF6Zmd3b3Jya3Jvc2d6ZndjZmN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY0Mjg1MzYsImV4cCI6MjA4MjAwNDUzNn0.diGZlxL_9ioS74i-slVFkzg3HbWGl-hyyxY4yQ-ITiA';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables');
+    console.error('Missing Supabase environment variables. Please check your .env file.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        storage: memoryStorage,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-    },
-});
+console.log('Initializing Supabase client...');
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+    ? createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            storage: memoryStorage,
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false,
+        },
+    })
+    : null;
+if (supabase) console.log('Supabase client initialized successfully.');
 
 // Google Sheets Integration Service
 const GOOGLE_SCRIPT_URLS = [
@@ -44,28 +48,34 @@ function calculateDaysOverdue(drawDate) {
         let finalDate = new Date();
         if (typeof drawDate === 'string' && drawDate.includes(' ')) {
             const parts = drawDate.split(' ');
-            const timePart = parts[0].toUpperCase();
-            const datePart = parts[1];
-            const [year, month, day] = datePart.split('-').map(Number);
-            
-            let hour = 0;
-            let minute = 0;
-            const isPM = timePart.endsWith('PM');
-            const isAM = timePart.endsWith('AM');
-            const timeDigits = timePart.replace(/[AP]M/, '');
+            if (parts && parts.length >= 2) {
+                const timePart = parts[0].toUpperCase();
+                const datePart = parts[1];
+                const dateSegments = datePart.split('-');
+                
+                if (dateSegments.length === 3) {
+                    const [year, month, day] = dateSegments.map(Number);
+                    
+                    let hour = 0;
+                    let minute = 0;
+                    const isPM = timePart.endsWith('PM');
+                    const isAM = timePart.endsWith('AM');
+                    const timeDigits = timePart.replace(/[AP]M/, '');
 
-            if (timeDigits.includes(':')) {
-                const [h, m] = timeDigits.split(':').map(Number);
-                hour = h;
-                minute = m;
-            } else {
-                hour = Number(timeDigits);
+                    if (timeDigits.includes(':')) {
+                        const [h, m] = timeDigits.split(':').map(Number);
+                        hour = h;
+                        minute = m;
+                    } else {
+                        hour = Number(timeDigits);
+                    }
+
+                    if (isPM && hour < 12) hour += 12;
+                    if (isAM && hour === 12) hour = 0;
+
+                    finalDate = new Date(year, month - 1, day, hour, minute);
+                }
             }
-
-            if (isPM && hour < 12) hour += 12;
-            if (isAM && hour === 12) hour = 0;
-
-            finalDate = new Date(year, month - 1, day, hour, minute);
         } else {
             finalDate = new Date(drawDate);
         }
@@ -148,6 +158,7 @@ export const googleSheetsHelpers = {
 
 export const authHelpers = {
     signIn: async (username, password) => {
+        if (!supabase) throw new Error('Supabase client not initialized. Check your environment variables.');
         const { data, error } = await supabase
             .from('users')
             .select('*')
@@ -192,6 +203,7 @@ export const authHelpers = {
 
 export const dataHelpers = {
     getPending: async (filters = {}) => {
+        if (!supabase) throw new Error('Supabase client not initialized. Check your environment variables.');
         let query = supabase
             .from('Pending')
             .select('*')

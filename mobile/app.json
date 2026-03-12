@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "STL Unclaimed",
+    "slug": "stl-unclaimed",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/stl-logo.png",
@@ -16,21 +16,19 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/stl-logo.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#FFFFFF"
       },
-      "package": "com.lordshin124.mobile"
+      "package": "com.stl.unclaimed"
     },
     "web": {
       "favicon": "./assets/stl-logo.png"
     },
     "extra": {
       "eas": {
-        "projectId": "f4a3289c-5e78-4d59-a6f9-753a41fa0adc"
+        "projectId": "291ca353-5cf1-4cb7-9d38-d7c048a9f549"
       }
     },
-    "owner": "lordshin124"
+    "owner": "kambal5"
   }
 }

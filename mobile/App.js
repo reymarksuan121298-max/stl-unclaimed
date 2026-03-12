@@ -27,50 +27,48 @@ export default function App() {
     setUser(null);
   };
 
-  if (loading) {
-     return (
-        <SafeAreaView style={styles.centerContainer}>
-           <ActivityIndicator size="large" color="#ea580c" />
-        </SafeAreaView>
-     );
-  }
-
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        {user ? (
-          <>
-            <View style={{ flex: 1 }}>
-              {activeTab === 'pending' ? (
-                <PendingScreen user={user} />
-              ) : (
-                <ProfileScreen user={user} onLogout={handleLogout} />
-              )}
-            </View>
+      {loading ? (
+        <SafeAreaView style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#ea580c" />
+        </SafeAreaView>
+      ) : (
+        <SafeAreaView style={styles.container}>
+          {user ? (
+            <>
+              <View style={{ flex: 1 }}>
+                {activeTab === 'pending' ? (
+                  <PendingScreen user={user} />
+                ) : (
+                  <ProfileScreen user={user} onLogout={handleLogout} />
+                )}
+              </View>
 
-            {/* Bottom Tab Navigation */}
-            <View style={styles.tabBar}>
-              <TouchableOpacity 
-                style={styles.tabItem} 
-                onPress={() => setActiveTab('pending')}
-              >
-                <Clock size={24} color={activeTab === 'pending' ? '#ea580c' : '#9ca3af'} />
-                <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Pending</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.tabItem} 
-                onPress={() => setActiveTab('profile')}
-              >
-                <UserCircle size={24} color={activeTab === 'profile' ? '#ea580c' : '#9ca3af'} />
-                <Text style={[styles.tabText, activeTab === 'profile' && styles.tabTextActive]}>Profile</Text>
-              </TouchableOpacity>
-            </View>
-          </>
-        ) : (
-          <LoginScreen onLogin={(userData) => setUser(userData)} />
-        )}
-      </SafeAreaView>
+              {/* Bottom Tab Navigation */}
+              <View style={styles.tabBar}>
+                <TouchableOpacity 
+                  style={styles.tabItem} 
+                  onPress={() => setActiveTab('pending')}
+                >
+                  <Clock size={24} color={activeTab === 'pending' ? '#ea580c' : '#9ca3af'} />
+                  <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Pending</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.tabItem} 
+                  onPress={() => setActiveTab('profile')}
+                >
+                  <UserCircle size={24} color={activeTab === 'profile' ? '#ea580c' : '#9ca3af'} />
+                  <Text style={[styles.tabText, activeTab === 'profile' && styles.tabTextActive]}>Profile</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <LoginScreen onLogin={(userData) => setUser(userData)} />
+          )}
+        </SafeAreaView>
+      )}
     </SafeAreaProvider>
   );
 }
