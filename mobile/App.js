@@ -17,9 +17,14 @@ export default function App() {
   }, []);
 
   const checkUser = async () => {
-    const currentUser = await authHelpers.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    try {
+      const currentUser = await authHelpers.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Failed to check user:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -47,16 +52,27 @@ export default function App() {
 
               {/* Bottom Tab Navigation */}
               <View style={styles.tabBar}>
+<<<<<<< HEAD
                 <TouchableOpacity 
                   style={styles.tabItem} 
+=======
+                <TouchableOpacity
+                  style={styles.tabItem}
+>>>>>>> edaef4e4a14945798dfc4f51c54984f74f17f644
                   onPress={() => setActiveTab('pending')}
                 >
                   <Clock size={24} color={activeTab === 'pending' ? '#ea580c' : '#9ca3af'} />
                   <Text style={[styles.tabText, activeTab === 'pending' && styles.tabTextActive]}>Pending</Text>
                 </TouchableOpacity>
+<<<<<<< HEAD
                 
                 <TouchableOpacity 
                   style={styles.tabItem} 
+=======
+
+                <TouchableOpacity
+                  style={styles.tabItem}
+>>>>>>> edaef4e4a14945798dfc4f51c54984f74f17f644
                   onPress={() => setActiveTab('profile')}
                 >
                   <UserCircle size={24} color={activeTab === 'profile' ? '#ea580c' : '#9ca3af'} />
