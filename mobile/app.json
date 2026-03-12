@@ -19,17 +19,7 @@
         "foregroundImage": "./assets/stl-logo.png",
         "backgroundColor": "#FFFFFF"
       },
-<<<<<<< HEAD
       "package": "com.stl.unclaimed"
-=======
-      "package": "com.lordshin124.mobile",
-      "versionCode": 1,
-      "permissions": [
-        "INTERNET",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ]
->>>>>>> edaef4e4a14945798dfc4f51c54984f74f17f644
     },
     "web": {
       "favicon": "./assets/stl-logo.png"
