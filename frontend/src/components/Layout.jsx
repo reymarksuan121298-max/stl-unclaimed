@@ -55,8 +55,8 @@ function Layout({ children, user }) {
                     {/* Logo */}
                     <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
                         <div className="flex flex-col items-center gap-2">
-                            <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center">
-                                <Package className="w-6 h-6 text-white" />
+                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
+                                <img src="/logo.png" alt="STL Logo" className="w-full h-full object-contain p-1" />
                             </div>
                             <div className="text-center">
                                 <h1 className="text-xl font-bold text-white">STL Unclaimed</h1>
@@ -163,8 +163,8 @@ function Layout({ children, user }) {
                                 {/* Logo */}
                                 <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
                                     <div className="flex flex-col items-center gap-2">
-                                        <div className="w-10 h-10 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center">
-                                            <Package className="w-6 h-6 text-white" />
+                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
+                                            <img src="/logo.png" alt="STL Logo" className="w-full h-full object-contain p-1" />
                                         </div>
                                         <div className="text-center">
                                             <h1 className="text-xl font-bold text-white">STL Unclaimed</h1>
