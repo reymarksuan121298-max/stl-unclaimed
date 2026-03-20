@@ -12,9 +12,32 @@ function Pending({ user }) {
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
 
+    const [checkerCollectors, setCheckerCollectors] = useState([])
+
+    useEffect(() => {
+        const fetchCheckerCollectors = async () => {
+            if (user?.role?.toLowerCase() === 'checker' && user?.assigned_cashiers && user.assigned_cashiers.length > 0) {
+                try {
+                    const cashiers = await dataHelpers.getUsers({ usernames: user.assigned_cashiers, role: 'cashier', status: 'active' })
+                    if (cashiers && cashiers.length > 0) {
+                        const allCollectors = cashiers.flatMap(c => c.assigned_collectors || [])
+                        setCheckerCollectors([...new Set(allCollectors)])
+                    }
+                } catch (error) {
+                    console.error("Error loading checker setup:", error)
+                }
+            }
+        }
+        fetchCheckerCollectors()
+    }, [user])
+
+    const activeRole = user?.role?.toLowerCase() === 'checker' ? 'cashier' : user?.role?.toLowerCase()
+    const activeCollectors = user?.role?.toLowerCase() === 'checker' ? checkerCollectors : (user?.assigned_collectors || [])
+    const activeUser = { ...user, role: activeRole, assigned_collectors: activeCollectors }
+
     useEffect(() => {
         loadPending()
-    }, [filterFranchise, filterCollector, user])
+    }, [filterFranchise, filterCollector, user, checkerCollectors])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
@@ -180,21 +203,21 @@ function Pending({ user }) {
             if (filterFranchise) filters.franchise_name = filterFranchise
 
             // For collector: always filter by their own username
-            if (user?.role?.toLowerCase() === 'collector' && user?.username) {
-                filters.collector = user.username
+            if (activeRole === 'collector' && activeUser?.username) {
+                filters.collector = activeUser.username
             } else if (filterCollector) {
                 // If a specific collector is selected in the dropdown
                 filters.collector = filterCollector
-            } else if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
+            } else if (activeRole === 'cashier' && activeUser?.assigned_collectors && Array.isArray(activeUser.assigned_collectors)) {
                 // For cashier with no specific filter selected: fetch all assigned collectors
-                filters.collectors = user.assigned_collectors
+                filters.collectors = activeUser.assigned_collectors
             }
 
             // Fetch from both sources in parallel
-            // Pass user for initial filtering in googleSheetsHelpers if needed
+            // Pass activeUser for initial filtering in googleSheetsHelpers if needed
             const [supabaseData, sheetsData] = await Promise.allSettled([
                 dataHelpers.getPending(filters),
-                googleSheetsHelpers.getPendingFromSheets(user)
+                googleSheetsHelpers.getPendingFromSheets(activeUser)
             ])
 
             // Process Supabase data
@@ -230,9 +253,9 @@ function Pending({ user }) {
             }
 
             // Final safety filter for cashiers based on assigned collectors
-            if (user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors && Array.isArray(user.assigned_collectors)) {
+            if (activeRole === 'cashier' && activeUser?.assigned_collectors && Array.isArray(activeUser.assigned_collectors)) {
                 const normalize = (name) => (name || '').toLowerCase().replace(/\s+/g, '').split('@')[0].trim();
-                const assignedCollectorsNormalized = new Set(user.assigned_collectors.map(normalize))
+                const assignedCollectorsNormalized = new Set(activeUser.assigned_collectors.map(normalize))
 
                 allItems = allItems.filter(item => {
                     const itemCollectorNormalized = normalize(item.collector)
@@ -291,8 +314,8 @@ function Pending({ user }) {
     const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
-    const collectors = user?.role?.toLowerCase() === 'cashier' && user?.assigned_collectors
-        ? [...user.assigned_collectors].sort()
+    const collectors = activeRole === 'cashier' && activeUser?.assigned_collectors
+        ? [...activeUser.assigned_collectors].sort()
         : [...new Set(items.map(i => i.collector).filter(Boolean))].sort()
 
     const getOverdueCategory = (days) => {
@@ -352,9 +375,9 @@ function Pending({ user }) {
             )}
 
             {/* Filters */}
-            {user?.role?.toLowerCase() !== 'collector' && (
+            {activeRole !== 'collector' && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'cashier' ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
+                    <div className={`grid grid-cols-1 ${activeRole === 'cashier' ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-4`}>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <label htmlFor="pending-search" className="sr-only">Search items</label>
@@ -369,7 +392,7 @@ function Pending({ user }) {
                             />
                         </div>
 
-                        {user?.role?.toLowerCase() !== 'cashier' && (
+                        {activeRole !== 'cashier' && (
                             <div className="relative">
                                 <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <label htmlFor="pending-franchise-filter" className="sr-only">Filter by franchise</label>
@@ -400,7 +423,7 @@ function Pending({ user }) {
                                 size="1"
                                 style={{ maxHeight: '200px' }}
                             >
-                                <option value="">{user?.role?.toLowerCase() === 'cashier' ? 'All My Collectors' : 'All Collectors'}</option>
+                                <option value="">{activeRole === 'cashier' ? 'All My Collectors' : 'All Collectors'}</option>
                                 {collectors.map(collector => (
                                     <option key={collector} value={collector}>{collector}</option>
                                 ))}
@@ -548,7 +571,7 @@ function Pending({ user }) {
                                             </React.Fragment>
                                         )
                                     })
-                                ) : user?.role?.toLowerCase() === 'cashier' ? (
+                                ) : activeRole === 'cashier' ? (
                                     // For cashier: group by collector (assigned collectors only)
                                     Object.keys(groupedByCollector).sort().map(collectorName => {
                                         const collectorItems = groupedByCollector[collectorName]

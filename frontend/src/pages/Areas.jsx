@@ -231,8 +231,14 @@ function Areas({ user }) {
 
             {/* Modal */}
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                    onClick={() => setShowModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between rounded-t-2xl">
                             <h2 className="text-xl font-bold">{editingArea ? 'Edit Area' : 'Add Area'}</h2>
                             <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">

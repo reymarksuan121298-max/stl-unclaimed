@@ -15,8 +15,25 @@ function CashDeposits({ user }) {
     const [selectedItem, setSelectedItem] = useState(null)
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
-    const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
+    const [checkerCollectors, setCheckerCollectors] = useState([])
+
+    useEffect(() => {
+        const fetchCheckerCollectors = async () => {
+            if (user?.role?.toLowerCase() === 'checker' && user?.assigned_cashiers && user.assigned_cashiers.length > 0) {
+                try {
+                    const cashiers = await dataHelpers.getUsers({ usernames: user.assigned_cashiers, role: 'cashier', status: 'active' })
+                    if (cashiers && cashiers.length > 0) {
+                        const allCollectors = cashiers.flatMap(c => c.assigned_collectors || [])
+                        setCheckerCollectors([...new Set(allCollectors)])
+                    }
+                } catch (error) {
+                    console.error("Error loading checker setup:", error)
+                }
+            }
+        }
+        fetchCheckerCollectors()
+    }, [user])
     const [depositFormData, setDepositFormData] = useState({
         deposit_amount: '',
         total_charges: '',
@@ -28,7 +45,7 @@ function CashDeposits({ user }) {
 
     useEffect(() => {
         loadPendingDeposits()
-    }, [filterFranchise, filterArea])
+    }, [filterFranchise, filterArea, checkerCollectors])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
@@ -41,8 +58,13 @@ function CashDeposits({ user }) {
             if (filterFranchise) filters.franchise_name = filterFranchise
             if (filterArea) filters.area = filterArea
 
-            // Get ALL cash collections (both pending and deposited)
-            const allUnclaimed = await dataHelpers.getUnclaimed()
+            // If checker, limit to their assigned collectors
+            if (user?.role?.toLowerCase() === 'checker' && checkerCollectors.length > 0) {
+                filters.collectors = checkerCollectors
+            }
+
+            // Get cash collections (both pending and deposited)
+            const allUnclaimed = await dataHelpers.getUnclaimed(filters)
 
             // Filter for cash mode items that are collected
             const cashItems = allUnclaimed.filter(item =>
@@ -527,8 +549,14 @@ function CashDeposits({ user }) {
 
             {/* Deposit Modal */}
             {showDepositModal && selectedItem && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                    onClick={() => setShowDepositModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl animate-in fade-in zoom-in duration-200 my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="px-4 py-3 bg-gradient-to-r from-emerald-600 to-green-600 text-white flex items-center justify-between">
                             <h2 className="text-lg font-bold">
                                 {selectedItem === 'ALL' ? 'Deposit All Cash Collections' : 'Record Cash Deposit'}
@@ -714,8 +742,14 @@ function CashDeposits({ user }) {
             )}
             {/* Receipt Modal */}
             {showReceiptModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col">
+                <div 
+                    className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+                    onClick={() => setShowReceiptModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white flex items-center justify-between flex-shrink-0">
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 <ImageIcon className="w-6 h-6" />

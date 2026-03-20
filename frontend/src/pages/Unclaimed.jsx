@@ -7,23 +7,41 @@ import { saveAs } from 'file-saver'
 
 function Unclaimed({ user }) {
     const [items, setItems] = useState([])
+    const [areas, setAreas] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterFranchise, setFilterFranchise] = useState('')
     const [filterArea, setFilterArea] = useState('')
     const [filterStatus, setFilterStatus] = useState(() => {
         const role = user?.role?.toLowerCase()
-        // Admin, Specialist, and now Cashier default to 'All Statuses'
-        return (role === 'admin' || role === 'specialist' || role === 'cashier') ? '' : 'Unclaimed'
+        // Admin, Specialist, and now Checker default to 'All Statuses'
+        return (role === 'admin' || role === 'specialist' || role === 'checker') ? '' : 'Unclaimed'
     })
     const [showModal, setShowModal] = useState(false)
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
     const [selectedReceiptItem, setSelectedReceiptItem] = useState(null)
     const [editingItem, setEditingItem] = useState(null)
-    const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
     const [collectors, setCollectors] = useState([])
+    const [checkerCollectors, setCheckerCollectors] = useState([])
+
+    useEffect(() => {
+        const fetchCheckerCollectors = async () => {
+            if (user?.role?.toLowerCase() === 'checker' && user?.assigned_cashiers && user.assigned_cashiers.length > 0) {
+                try {
+                    const cashiers = await dataHelpers.getUsers({ usernames: user.assigned_cashiers, role: 'cashier', status: 'active' })
+                    if (cashiers && cashiers.length > 0) {
+                        const allCollectors = cashiers.flatMap(c => c.assigned_collectors || [])
+                        setCheckerCollectors([...new Set(allCollectors)])
+                    }
+                } catch (error) {
+                    console.error("Error loading checker setup:", error)
+                }
+            }
+        }
+        fetchCheckerCollectors()
+    }, [user])
     const [formData, setFormData] = useState({
         teller_name: '',
         bet_number: '',
@@ -44,11 +62,12 @@ function Unclaimed({ user }) {
 
     useEffect(() => {
         loadUnclaimed()
-    }, [filterFranchise, filterArea, filterStatus])
+    }, [filterFranchise, filterArea, filterStatus, checkerCollectors])
 
     useEffect(() => {
         loadCollectors()
-    }, [])
+        loadAreas()
+    }, [checkerCollectors])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
@@ -62,7 +81,7 @@ function Unclaimed({ user }) {
             // For Cashiers, only show truly Unclaimed items in the default view
             // Once they mark it as collected, it "moves" to their Cash Deposits page
             if (filterStatus === 'Unclaimed') {
-                if (user?.role?.toLowerCase() === 'cashier') {
+                if (user?.role?.toLowerCase() === 'checker') {
                     filters.status = 'Unclaimed'
                 } else {
                     // Admin/Specialist see both Unclaimed and Uncollected (for verification)
@@ -80,6 +99,11 @@ function Unclaimed({ user }) {
                 filters.collector = user.username
             }
 
+            // If user is a checker, restrict results to their assigned collectors
+            if (user?.role?.toLowerCase() === 'checker' && checkerCollectors.length > 0) {
+                filters.collectors = checkerCollectors
+            }
+
             const data = await dataHelpers.getUnclaimed(filters)
             setItems(data)
         } catch (error) {
@@ -90,12 +114,29 @@ function Unclaimed({ user }) {
         }
     }
 
-    const loadCollectors = async () => {
+    const loadCollectors = async (areaName = '') => {
         try {
-            const data = await dataHelpers.getUsers({ role: 'collector', status: 'active' })
+            const filters = { role: 'collector', status: 'active' }
+            if (areaName) filters.municipality = areaName
+            
+            // If checker, limit choices to their assigned collectors
+            if (user?.role?.toLowerCase() === 'checker' && checkerCollectors.length > 0) {
+                filters.usernames = checkerCollectors
+            }
+            
+            const data = await dataHelpers.getUsers(filters)
             setCollectors(data)
         } catch (error) {
             console.error('Error loading collectors:', error)
+        }
+    }
+
+    const loadAreas = async () => {
+        try {
+            const data = await dataHelpers.getAreas({ status: 'active' })
+            setAreas(data)
+        } catch (error) {
+            console.error('Error loading areas:', error)
         }
     }
 
@@ -248,6 +289,12 @@ function Unclaimed({ user }) {
                 reference_number: item.reference_number || '',
                 receiver_contact: item.receiver_contact || ''
             })
+            // Fetch collectors for this item's area
+            if (item.area) {
+                loadCollectors(item.area)
+            } else {
+                loadCollectors()
+            }
         } else {
             setEditingItem(null)
             setFormData({
@@ -270,6 +317,7 @@ function Unclaimed({ user }) {
                 reference_number: '',
                 receiver_contact: ''
             })
+            loadCollectors()
         }
         setShowModal(true)
     }
@@ -360,7 +408,6 @@ function Unclaimed({ user }) {
     const prevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1))
 
     const franchises = ['5A Royal Gaming OPC', 'Imperial Gnaing OPC', 'Glowing Fortune OPC']
-    const areas = ['BAROY', 'KAPATAGAN', 'KOLAMBOGAN', 'LALA', 'MAIGO', 'SALVADOR', 'SAPAD', 'SND', 'TUBOD']
 
     if (loading && items.length === 0) {
         return (
@@ -382,7 +429,21 @@ function Unclaimed({ user }) {
                         <Package className="w-8 h-8 text-indigo-600" />
                         Unclaimed Items
                     </h1>
-                    <p className="text-gray-600 mt-1">Manage all unclaimed winnings</p>
+                    <p className="text-gray-600 mt-1">Manage and track unclaimed winning receipts</p>
+                    {user?.role?.toLowerCase() === 'collector' && (user?.assigned_areas || user?.municipality) && (
+                        <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs font-bold text-indigo-500 uppercase tracking-wider">Designated Areas:</span>
+                            <div className="flex flex-wrap gap-1">
+                                {(user.assigned_areas && user.assigned_areas.length > 0) ? (
+                                    user.assigned_areas.map(a => (
+                                        <span key={a} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-100">{a}</span>
+                                    ))
+                                ) : (
+                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-100">{user.municipality}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <button
@@ -407,7 +468,7 @@ function Unclaimed({ user }) {
             {/* Filters */}
             {user?.role?.toLowerCase() !== 'collector' && (
                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'cashier' ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
+                    <div className={`grid grid-cols-1 ${user?.role?.toLowerCase() === 'checker' ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <label htmlFor="unclaimed-search" className="sr-only">Search items</label>
@@ -450,13 +511,13 @@ function Unclaimed({ user }) {
                                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
                             >
                                 <option value="">All Areas</option>
-                                {[...new Set(items.map(i => i.area).filter(Boolean))].sort().map(area => (
-                                    <option key={area} value={area}>{area}</option>
+                                {areas.map(area => (
+                                    <option key={area.id} value={area.name}>{area.name}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {user?.role?.toLowerCase() !== 'cashier' && (
+                        {user?.role?.toLowerCase() !== 'checker' && (
                             <div className="relative">
                                 <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <label htmlFor="unclaimed-status-filter" className="sr-only">Filter by status</label>
@@ -572,7 +633,7 @@ function Unclaimed({ user }) {
                                         <td className="px-3 py-2 whitespace-nowrap">
                                             {(() => {
                                                 // For cashiers viewing their own marked items, show "Unclaimed" instead of "Uncollected"
-                                                const displayStatus = (user?.role?.toLowerCase() === 'cashier' && item.status === 'Uncollected')
+                                                const displayStatus = (user?.role?.toLowerCase() === 'checker' && item.status === 'Uncollected')
                                                     ? 'Unclaimed'
                                                     : item.status;
 
@@ -598,7 +659,7 @@ function Unclaimed({ user }) {
                                             <div className="flex items-center gap-1">
                                                 {item.status === 'Unclaimed' && hasPermission(user, PERMISSIONS.MARK_AS_COLLECTED) && (
                                                     // For cashiers, only show button for cash items
-                                                    (user?.role?.toLowerCase() !== 'cashier' || item.mode?.toLowerCase() === 'cash') && (
+                                                    (user?.role?.toLowerCase() !== 'checker' || item.mode?.toLowerCase() === 'cash') && (
                                                         <button
                                                             onClick={() => handleMarkAsCollected(item.id)}
                                                             className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -711,8 +772,14 @@ function Unclaimed({ user }) {
             {/* Modal */}
             {
                 showModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                        onClick={() => setShowModal(false)}
+                    >
+                        <div
+                            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[95vh] flex flex-col my-auto"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between sticky top-0 z-10">
                                 <h2 className="text-xl font-bold">{editingItem ? 'Edit Unclaimed Item' : 'Add Unclaimed Item'}</h2>
                                 <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
@@ -861,8 +928,8 @@ function Unclaimed({ user }) {
                                                                 charge_amount: newMode === 'Cash' ? '0' : formData.charge_amount
                                                             });
                                                         }}
-                                                        disabled={isCollectorEditMode || user?.role?.toLowerCase() === 'cashier'}
-                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode || user?.role?.toLowerCase() === 'cashier' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        disabled={isCollectorEditMode || user?.role?.toLowerCase() === 'checker'}
+                                                        className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode || user?.role?.toLowerCase() === 'checker' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                     >
                                                         <option value="Cash">Cash</option>
                                                         <option value="Back Transfer">Back Transfer</option>
@@ -870,7 +937,7 @@ function Unclaimed({ user }) {
                                                         <option value="Gcash">Gcash</option>
                                                         <option value="Palawan">Palawan</option>
                                                     </select>
-                                                    {user?.role?.toLowerCase() === 'cashier' && (
+                                                    {user?.role?.toLowerCase() === 'checker' && (
                                                         <p className="text-xs text-emerald-600 font-medium">Cashiers can only add Cash items</p>
                                                     )}
                                                 </div>
@@ -989,16 +1056,24 @@ function Unclaimed({ user }) {
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-area" className="text-xs font-semibold text-gray-700">Area</label>
-                                                    <input
+                                                    <select
                                                         id="modal-area"
                                                         name="area"
-                                                        type="text"
+                                                        required
                                                         value={formData.area}
-                                                        onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                                        onChange={(e) => {
+                                                            const newArea = e.target.value;
+                                                            setFormData({ ...formData, area: newArea, collector: '' });
+                                                            loadCollectors(newArea);
+                                                        }}
                                                         disabled={isCollectorEditMode}
                                                         className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
-                                                        placeholder="Enter area name"
-                                                    />
+                                                    >
+                                                        <option value="">Select Area</option>
+                                                        {areas.map(area => (
+                                                            <option key={area.id} value={area.name}>{area.name}</option>
+                                                        ))}
+                                                    </select>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>
@@ -1013,7 +1088,7 @@ function Unclaimed({ user }) {
                                                         <option value="">Select Collector</option>
                                                         {collectors.map(collector => (
                                                             <option key={collector.id} value={collector.fullname}>
-                                                                {collector.fullname}
+                                                                {collector.fullname} {collector.assigned_areas && collector.assigned_areas.length > 0 ? `(${collector.assigned_areas.join(', ')})` : collector.municipality ? `(${collector.municipality})` : ''}
                                                             </option>
                                                         ))}
                                                     </select>

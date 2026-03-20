@@ -6,10 +6,12 @@ function Users({ user }) {
     const [users, setUsers] = useState([])
     const [municipalities, setMunicipalities] = useState([])
     const [collectors, setCollectors] = useState([])
+    const [cashiers, setCashiers] = useState([])
     const [loading, setLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState('')
     const [filterRole, setFilterRole] = useState('')
     const [filterStatus, setFilterStatus] = useState('')
+    const [filterMunicipality, setFilterMunicipality] = useState('')
 
     const [showUserModal, setShowUserModal] = useState(false)
     const [viewingUser, setViewingUser] = useState(null)
@@ -25,7 +27,9 @@ function Users({ user }) {
         role: 'staff',
         franchising_name: '',
         municipality: '',
+        assigned_areas: [],
         assigned_collectors: [],
+        assigned_cashiers: [],
         status: 'active'
     })
 
@@ -33,7 +37,8 @@ function Users({ user }) {
         loadUsers()
         loadMunicipalities()
         loadCollectors()
-    }, [filterRole, filterStatus])
+        loadCashiers()
+    }, [filterRole, filterStatus, filterMunicipality])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
@@ -45,6 +50,7 @@ function Users({ user }) {
             const filters = {}
             if (filterRole) filters.role = filterRole
             if (filterStatus) filters.status = filterStatus
+            if (filterMunicipality) filters.municipality = filterMunicipality
 
             const data = await dataHelpers.getUsers(filters)
             setUsers(data)
@@ -71,6 +77,15 @@ function Users({ user }) {
             setCollectors(data)
         } catch (error) {
             console.error('Error loading collectors:', error)
+        }
+    }
+
+    const loadCashiers = async () => {
+        try {
+            const data = await dataHelpers.getUsers({ role: 'cashier', status: 'active' })
+            setCashiers(data)
+        } catch (error) {
+            console.error('Error loading cashiers:', error)
         }
     }
 
@@ -112,7 +127,9 @@ function Users({ user }) {
                 role: user.role,
                 franchising_name: user.franchising_name || '',
                 municipality: user.municipality || '',
+                assigned_areas: user.assigned_areas || [],
                 assigned_collectors: user.assigned_collectors || [],
+                assigned_cashiers: user.assigned_cashiers || [],
                 status: user.status
             })
         } else {
@@ -125,7 +142,9 @@ function Users({ user }) {
                 role: 'staff',
                 franchising_name: '',
                 municipality: '',
+                assigned_areas: [],
                 assigned_collectors: [],
+                assigned_cashiers: [],
                 status: 'active'
             })
         }
@@ -245,6 +264,23 @@ function Users({ user }) {
 
                     <div className="relative">
                         <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <label htmlFor="municipality-filter" className="sr-only">Filter by municipality</label>
+                        <select
+                            id="municipality-filter"
+                            name="municipality"
+                            value={filterMunicipality}
+                            onChange={(e) => setFilterMunicipality(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                        >
+                            <option value="">All Municipalities</option>
+                            {municipalities.map(m => (
+                                <option key={m.id} value={m.name}>{m.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <label htmlFor="status-filter" className="sr-only">Filter by status</label>
                         <select
                             id="status-filter"
@@ -302,7 +338,17 @@ function Users({ user }) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{user.franchising_name || ''}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-600">{user.municipality || '-'}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                                {user.assigned_areas && user.assigned_areas.length > 0 ? (
+                                                    user.assigned_areas.map(area => (
+                                                        <span key={area} className="px-1.5 py-0.5 bg-gray-100 rounded text-[10px] font-medium">{area}</span>
+                                                    ))
+                                                ) : (
+                                                    user.municipality || '-'
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${user.status === 'active'
                                                 ? 'bg-green-100 text-green-800'
@@ -424,8 +470,14 @@ function Users({ user }) {
 
             {/* User Modal */}
             {showUserModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                    onClick={() => setShowUserModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between">
                             <h2 className="text-xl font-bold">{editingUser ? 'Edit User' : 'Add New User'}</h2>
                             <button onClick={() => setShowUserModal(false)} className="p-1 hover:bg-white/20 rounded-lg transition-colors">
@@ -511,8 +563,8 @@ function Users({ user }) {
                                         ))}
                                     </select>
                                 </div>
-                                {formData.role === 'collector' && (
-                                    <div className="space-y-1">
+                                {['staff', 'checker'].includes(formData.role) && (
+                                    <div className="space-y-1 col-span-2">
                                         <label htmlFor="user-municipality" className="text-sm font-medium text-gray-700">Designated Municipality</label>
                                         <select
                                             id="user-municipality"
@@ -522,10 +574,72 @@ function Users({ user }) {
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
                                         >
                                             <option value="">Select Municipality</option>
-                                            {municipalities.map(municipality => (
-                                                <option key={municipality.id} value={municipality.name}>{municipality.name}</option>
+                                            {municipalities.map(m => (
+                                                <option key={m.id} value={m.name}>{m.name}</option>
                                             ))}
                                         </select>
+                                    </div>
+                                )}
+                                {formData.role === 'collector' && (
+                                    <div className="col-span-2 space-y-2">
+                                        <label className="text-sm font-medium text-gray-700">Designated Areas/Municipalities (Check All That Apply)</label>
+                                        <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-gray-50 flex flex-col gap-2">
+                                            {municipalities.map(m => (
+                                                <label key={m.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.assigned_areas.includes(m.name)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    assigned_areas: [...formData.assigned_areas, m.name]
+                                                                })
+                                                            } else {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    assigned_areas: formData.assigned_areas.filter(a => a !== m.name)
+                                                                })
+                                                            }
+                                                        }}
+                                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700 font-medium">{m.name}</span>
+                                                </label>
+                                            ))}
+                                            {municipalities.length === 0 && <p className="text-sm text-center text-gray-400 py-4">No areas defined</p>}
+                                        </div>
+                                    </div>
+                                )}
+                                {formData.role === 'checker' && (
+                                    <div className="space-y-1 col-span-2">
+                                        <label className="text-sm font-medium text-gray-700">Assigned Cashiers</label>
+                                        <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-gray-50 flex flex-col gap-2">
+                                            {cashiers.map(cashier => (
+                                                <label key={cashier.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer transition-colors">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.assigned_cashiers.includes(cashier.username)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    assigned_cashiers: [...formData.assigned_cashiers, cashier.username]
+                                                                })
+                                                            } else {
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    assigned_cashiers: formData.assigned_cashiers.filter(c => c !== cashier.username)
+                                                                })
+                                                            }
+                                                        }}
+                                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                    />
+                                                    <span className="text-sm text-gray-700 font-medium">{cashier.fullname} (@{cashier.username})</span>
+                                                </label>
+                                            ))}
+                                            {cashiers.length === 0 && <p className="text-sm text-center text-gray-400 py-4">No cashiers available</p>}
+                                        </div>
                                     </div>
                                 )}
                                 {formData.role === 'cashier' && (
@@ -602,8 +716,14 @@ function Users({ user }) {
 
             {/* View Profile Modal */}
             {showViewModal && viewingUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transition-all transform scale-100">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+                    onClick={() => setShowViewModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transition-all transform scale-100 my-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {/* Modal Header/Cover */}
                         <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-700">
                             <button 
@@ -650,11 +770,36 @@ function Users({ user }) {
                                     <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Franchise</p>
                                     <p className="text-gray-800 font-medium text-sm">{viewingUser.franchising_name || 'N/A'}</p>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Municipality/Area</p>
-                                    <p className="text-gray-800 font-medium text-sm">{viewingUser.municipality || 'All Areas'}</p>
+                                <div className="space-y-1 col-span-2">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Municipality/Area Assignments</p>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {viewingUser.assigned_areas && viewingUser.assigned_areas.length > 0 ? (
+                                            viewingUser.assigned_areas.map(a => (
+                                                <span key={a} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[11px] font-bold rounded-full border border-indigo-100">{a}</span>
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-800 font-medium text-sm">{viewingUser.municipality || 'No specific areas'}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
+
+                            {viewingUser.role === 'checker' && viewingUser.assigned_cashiers && (
+                                <div className="pt-4 border-t border-gray-100">
+                                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-2">Assigned Cashiers</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {viewingUser.assigned_cashiers.length > 0 ? (
+                                            viewingUser.assigned_cashiers.map(c => (
+                                                <span key={c} className="px-3 py-1 bg-purple-50 text-purple-700 text-sm rounded-lg border border-purple-100 font-medium">
+                                                    @{c}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <p className="text-gray-500 text-sm italic">None assigned</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {viewingUser.role === 'cashier' && viewingUser.assigned_collectors && (
                                 <div className="pt-4 border-t border-gray-100">

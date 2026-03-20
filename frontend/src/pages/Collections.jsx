@@ -12,13 +12,29 @@ function Collections({ user }) {
     const [filterCollector, setFilterCollector] = useState('')
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
-    const [selectedReceiptItem, setSelectedReceiptItem] = useState(null)
-    const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
+    const [checkerCollectors, setCheckerCollectors] = useState([])
+
+    useEffect(() => {
+        const fetchCheckerCollectors = async () => {
+            if (user?.role?.toLowerCase() === 'checker' && user?.assigned_cashiers && user.assigned_cashiers.length > 0) {
+                try {
+                    const cashiers = await dataHelpers.getUsers({ usernames: user.assigned_cashiers, role: 'cashier', status: 'active' })
+                    if (cashiers && cashiers.length > 0) {
+                        const allCollectors = cashiers.flatMap(c => c.assigned_collectors || [])
+                        setCheckerCollectors([...new Set(allCollectors)])
+                    }
+                } catch (error) {
+                    console.error("Error loading checker setup:", error)
+                }
+            }
+        }
+        fetchCheckerCollectors()
+    }, [user])
 
     useEffect(() => {
         loadCollections()
-    }, [filterFranchise, filterCollector])
+    }, [filterFranchise, filterCollector, checkerCollectors])
 
     useEffect(() => {
         setCurrentPage(1) // Reset to first page when search/filter changes
@@ -35,6 +51,8 @@ function Collections({ user }) {
                 filters.collector = filterCollector
             } else if (user?.role?.toLowerCase() === 'collector' && user?.username) {
                 filters.collector = user.username
+            } else if (user?.role?.toLowerCase() === 'checker' && checkerCollectors.length > 0) {
+                filters.collectors = checkerCollectors
             }
 
             const data = await dataHelpers.getCollections(filters)
@@ -54,7 +72,7 @@ function Collections({ user }) {
             item.collector?.toLowerCase().includes(searchTerm.toLowerCase())
 
         // Cashier role filter - only show cash transactions
-        const isCashier = user?.role?.toLowerCase() === 'cashier'
+        const isCashier = user?.role?.toLowerCase() === 'checker'
         const matchesCashierFilter = !isCashier || item.mode?.toLowerCase() === 'cash'
 
         return matchesSearch && matchesCashierFilter

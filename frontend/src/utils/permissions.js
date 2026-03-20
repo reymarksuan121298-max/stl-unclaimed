@@ -64,10 +64,13 @@ const rolePermissions = {
         PERMISSIONS.UPDATE_UNCLAIMED, // Allow collectors to edit their own items (receipt upload only)
     ],
     'checker': [
-        PERMISSIONS.VIEW_DASHBOARD,
         PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.VIEW_PENDING,
+        PERMISSIONS.VIEW_COLLECTIONS,
         PERMISSIONS.CREATE_UNCLAIMED,
+        PERMISSIONS.DEPOSIT_CASH,
+        PERMISSIONS.VIEW_CASH_DEPOSITS,
+        PERMISSIONS.MARK_AS_COLLECTED,
     ],
     'staff': [
         PERMISSIONS.VIEW_DASHBOARD,
@@ -81,13 +84,7 @@ const rolePermissions = {
         PERMISSIONS.EXPORT_REPORTS,
     ],
     'cashier': [
-        PERMISSIONS.VIEW_UNCLAIMED,
         PERMISSIONS.VIEW_PENDING,
-        PERMISSIONS.VIEW_COLLECTIONS,
-        PERMISSIONS.CREATE_UNCLAIMED,
-        PERMISSIONS.DEPOSIT_CASH,
-        PERMISSIONS.VIEW_CASH_DEPOSITS,
-        PERMISSIONS.MARK_AS_COLLECTED, // Can mark as collected after deposit
     ],
 }
 

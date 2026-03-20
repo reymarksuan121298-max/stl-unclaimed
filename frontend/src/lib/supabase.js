@@ -61,6 +61,9 @@ export const dataHelpers = {
         if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
         if (filters.area) query = query.eq('area', filters.area)
         if (filters.collector) query = query.eq('collector', filters.collector)
+        if (filters.collectors && Array.isArray(filters.collectors)) {
+            query = query.in('collector', filters.collectors)
+        }
 
         const { data, error } = await query
         if (error) throw error
@@ -88,7 +91,7 @@ export const dataHelpers = {
         // Determine status based on user role
         // Cashiers mark as "Uncollected" (pending admin/specialist verification, NOT synced to Collections)
         // Admin/Specialist mark as "Collected" (final status, triggers sync to Collections via database trigger)
-        const newStatus = userRole?.toLowerCase() === 'cashier' ? 'Uncollected' : 'Collected'
+        const newStatus = (userRole?.toLowerCase() === 'cashier' || userRole?.toLowerCase() === 'checker') ? 'Uncollected' : 'Collected'
 
         // 2. Update Unclaimed status
         // NOTE: The database trigger 'on_unclaimed_collected' only fires when status = 'Collected'
@@ -360,6 +363,9 @@ export const dataHelpers = {
 
         if (filters.franchise_name) query = query.eq('franchise_name', filters.franchise_name)
         if (filters.collector) query = query.eq('collector', filters.collector)
+        if (filters.collectors && Array.isArray(filters.collectors)) {
+            query = query.in('collector', filters.collectors)
+        }
 
         const { data, error } = await query
         if (error) throw error
@@ -400,6 +406,13 @@ export const dataHelpers = {
 
         if (filters.role) query = query.eq('role', filters.role)
         if (filters.status) query = query.eq('status', filters.status)
+        if (filters.username) query = query.eq('username', filters.username)
+        if (filters.usernames && Array.isArray(filters.usernames)) query = query.in('username', filters.usernames)
+        if (filters.municipality) {
+            // For collectors/staff, we check both the specific municipality field 
+            // AND the new assigned_areas array field (if it exists)
+            query = query.or(`municipality.eq.${filters.municipality},assigned_areas.cs.{"${filters.municipality}"}`)
+        }
 
         const { data, error } = await query
         if (error) throw error
@@ -497,7 +510,7 @@ export const dataHelpers = {
     // Dashboard statistics
     getDashboardStats: async (user = null) => {
         // For cashiers, only count cash items
-        const isCashier = user?.role?.toLowerCase() === 'cashier'
+        const isCashier = (user?.role?.toLowerCase() === 'cashier' || user?.role?.toLowerCase() === 'checker')
         const isCollector = user?.role?.toLowerCase() === 'collector'
 
         let unclaimedQuery = supabase.from('Unclaimed').select('*', { count: 'exact', head: true }).in('status', ['Unclaimed', 'Uncollected'])
