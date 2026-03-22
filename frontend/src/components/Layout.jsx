@@ -56,7 +56,7 @@ function Layout({ children, user }) {
                     <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
                         <div className="flex flex-col items-center gap-2">
                             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-inner overflow-hidden">
-                                <img src="/logo.png" alt="STL Logo" className="w-full h-full object-contain p-1" />
+                                <img src="/logo.png" alt="Glowing Fortune Logo" className="w-full h-full object-contain p-1" />
                             </div>
                             <div className="text-center">
                                 <h1 className="text-xl font-bold text-white uppercase tracking-wider">Glowing Fortune</h1>

@@ -1,15 +1,5 @@
 @import "tailwindcss";
 
-@theme {
-    --color-primary: #0D3B42;
-    --color-primary-foreground: #FFFFFF;
-    --color-accent: #C59B4F;
-    --color-accent-foreground: #FFFFFF;
-    
-    --color-brand-teal: #0D3B42;
-    --color-brand-gold: #C59B4F;
-}
-
 @layer base {
     :root {
         --background: 0 0% 100%;
@@ -32,6 +22,10 @@
         --input: 214.3 31.8% 91.4%;
         --ring: 187 67% 15.5%;
         --radius: 0.75rem;
+        
+        /* Brand Colors */
+        --brand-teal: #0D3B42;
+        --brand-gold: #C59B4F;
     }
 }
 

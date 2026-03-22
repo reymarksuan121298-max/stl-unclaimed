@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import unclaimedIcon from '../assets/unclaimed.png'
+// Logo is served from public/logo.png
+const logoIcon = '/logo.png';
 
 function Login({ onLogin }) {
     const [username, setUsername] = useState('')
@@ -120,7 +121,7 @@ function Login({ onLogin }) {
                 <div className="bg-white/20 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 md:p-12 border border-white/30">
                     <div className="text-center mb-8">
                         <div className="inline-flex items-center justify-center mb-4">
-                            <img src={unclaimedIcon} alt="Unclaimed Logo" className="w-32 h-20 object-cover rounded-2xl" />
+                            <img src={logoIcon} alt="Glowing Fortune Logo" className="w-32 h-20 object-contain rounded-2xl p-2 bg-white" />
                         </div>
                         <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg uppercase tracking-wider">
                             Glowing Fortune
