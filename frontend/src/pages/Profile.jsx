@@ -110,7 +110,7 @@ function Profile({ user }) {
         <div className="p-6 md:p-8 space-y-8 max-w-4xl mx-auto">
             {/* Header / Cover */}
             <div className="relative">
-                <div className="h-48 md:h-64 bg-gradient-to-r from-indigo-600 to-purple-700 rounded-3xl shadow-xl overflow-hidden">
+                <div className="h-48 md:h-64 bg-gradient-to-r from-brand-teal to-brand-gold rounded-3xl shadow-xl overflow-hidden">
                     <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"></div>
                 </div>
                 <div className="absolute -bottom-1 left-8 w-32 h-32 md:w-40 md:h-40 bg-white rounded-full p-2 shadow-2xl flex items-center justify-center translate-y-1/2 group">
@@ -118,7 +118,7 @@ function Profile({ user }) {
                         {formData.profile_url ? (
                             <img src={formData.profile_url} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                            <span className="text-4xl md:text-5xl font-bold text-indigo-600">
+                            <span className="text-4xl md:text-5xl font-bold text-brand-teal">
                                 {user?.fullname?.charAt(0).toUpperCase() || 'U'}
                             </span>
                         )}
@@ -166,7 +166,7 @@ function Profile({ user }) {
                     {!isEditing ? (
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-200"
+                            className="flex items-center gap-2 px-6 py-2.5 bg-brand-teal text-white rounded-xl hover:bg-brand-teal/90 transition-all shadow-lg hover:shadow-brand-teal/20"
                         >
                             <Edit3 className="w-4 h-4" />
                             Edit Profile
@@ -207,7 +207,7 @@ function Profile({ user }) {
                                         type="text"
                                         value={formData.fullname}
                                         onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800"
+                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal transition-all font-medium text-slate-800"
                                     />
                                 ) : (
                                     <p className="text-gray-900 font-semibold">{formData.fullname || 'N/A'}</p>
@@ -220,7 +220,7 @@ function Profile({ user }) {
                                         type="text"
                                         value={formData.username}
                                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800"
+                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal transition-all font-medium text-slate-800"
                                     />
                                 ) : (
                                     <p className="text-gray-900 font-semibold">{formData.username || 'N/A'}</p>
@@ -233,7 +233,7 @@ function Profile({ user }) {
                                         type="text"
                                         value={formData.contact_number}
                                         onChange={(e) => setFormData({ ...formData, contact_number: e.target.value })}
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800"
+                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal transition-all font-medium text-slate-800"
                                     />
                                 ) : (
                                     <p className="text-gray-900 font-semibold">{formData.contact_number || 'N/A'}</p>
@@ -249,7 +249,7 @@ function Profile({ user }) {
                                     <select
                                         value={formData.franchising_name}
                                         onChange={(e) => setFormData({ ...formData, franchising_name: e.target.value })}
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-slate-800"
+                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-teal transition-all font-medium text-slate-800"
                                     >
                                         <option value="5A Royal Gaming OPC">5A Royal Gaming OPC</option>
                                         <option value="Imperial Gnaing OPC">Imperial Gnaing OPC</option>
@@ -274,7 +274,7 @@ function Profile({ user }) {
                                 <label className="text-sm font-medium text-gray-500 block mb-2">Security</label>
                                 <button 
                                     onClick={() => setShowPasswordModal(true)}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 text-indigo-600 font-bold rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-all text-sm shadow-sm group"
+                                    className="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-slate-200 text-brand-teal font-bold rounded-lg hover:bg-brand-teal/5 hover:border-brand-teal transition-all text-sm shadow-sm group"
                                 >
                                     <span className="flex items-center gap-2">
                                         <Key className="w-4 h-4" />
@@ -369,7 +369,7 @@ function Profile({ user }) {
                         className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+                        <div className="bg-gradient-to-r from-brand-teal to-brand-gold px-6 py-4 flex items-center justify-between">
                             <h3 className="text-xl font-bold text-white flex items-center gap-2">
                                 <Key className="w-5 h-5" />
                                 Change Security Password

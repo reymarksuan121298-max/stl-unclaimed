@@ -51,7 +51,7 @@ function Layout({ children, user }) {
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
             {/* Sidebar - Desktop */}
             <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
-                <div className="flex flex-col flex-grow bg-gradient-to-b from-indigo-600 to-purple-700 overflow-y-auto shadow-2xl">
+                <div className="flex flex-col flex-grow bg-brand-teal overflow-y-auto shadow-2xl">
                     {/* Logo */}
                     <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
                         <div className="flex flex-col items-center gap-2">
@@ -59,8 +59,8 @@ function Layout({ children, user }) {
                                 <img src="/logo.png" alt="STL Logo" className="w-full h-full object-contain p-1" />
                             </div>
                             <div className="text-center">
-                                <h1 className="text-xl font-bold text-white">STL Unclaimed</h1>
-                                <p className="text-xs text-indigo-200">Collections System</p>
+                                <h1 className="text-xl font-bold text-white uppercase tracking-wider">Glowing Fortune</h1>
+                                <p className="text-xs text-brand-gold font-medium">Gaming OPC</p>
                             </div>
                         </div>
                     </div>
@@ -80,7 +80,7 @@ function Layout({ children, user }) {
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-white truncate group-hover:underline">{user?.fullname || 'User'}</p>
-                            <p className="text-xs text-indigo-200 truncate">
+                            <p className="text-xs text-brand-gold truncate">
                                 {(user?.role || 'Role').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                             </p>
                         </div>
@@ -96,7 +96,7 @@ function Layout({ children, user }) {
                                     key={item.name}
                                     to={item.href}
                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
-                                        ? 'bg-white text-indigo-600 shadow-lg'
+                                        ? 'bg-brand-gold text-white shadow-lg'
                                         : 'text-white hover:bg-white/10'
                                         }`}
                                 >
@@ -121,7 +121,7 @@ function Layout({ children, user }) {
             </aside>
 
             {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-indigo-600 to-purple-700 shadow-lg">
+            <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-brand-teal shadow-lg">
                 <div className="flex items-center justify-between px-4 py-4">
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -159,7 +159,7 @@ function Layout({ children, user }) {
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                             className="md:hidden fixed inset-y-0 left-0 z-50 w-64"
                         >
-                            <div className="flex flex-col h-full bg-gradient-to-b from-indigo-600 to-purple-700 shadow-2xl">
+                            <div className="flex flex-col h-full bg-brand-teal shadow-2xl">
                                 {/* Logo */}
                                 <div className="flex items-center justify-center flex-shrink-0 px-6 py-6 bg-black/10">
                                     <div className="flex flex-col items-center gap-2">
@@ -167,8 +167,8 @@ function Layout({ children, user }) {
                                             <img src="/logo.png" alt="STL Logo" className="w-full h-full object-contain p-1" />
                                         </div>
                                         <div className="text-center">
-                                            <h1 className="text-xl font-bold text-white">STL Unclaimed</h1>
-                                            <p className="text-xs text-indigo-200">Collections System</p>
+                                            <h1 className="text-xl font-bold text-white">Glowing Fortune</h1>
+                                            <p className="text-xs text-brand-gold">Gaming OPC</p>
                                         </div>
                                     </div>
                                 </div>
@@ -212,7 +212,7 @@ function Layout({ children, user }) {
                                                     to={item.href}
                                                     onClick={() => setIsMobileMenuOpen(false)}
                                                     className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
-                                                        ? 'bg-white text-indigo-600 shadow-lg'
+                                                        ? 'bg-brand-gold text-white shadow-lg'
                                                         : 'text-white hover:bg-white/10'
                                                         }`}
                                                 >
@@ -251,7 +251,7 @@ function Layout({ children, user }) {
                 <footer className="fixed bottom-0 left-0 right-0 md:left-64 bg-white border-t border-gray-200 py-3 z-[60]">
                     <div className="text-center">
                         <p className="text-sm text-gray-600">
-                            <span className="font-semibold text-indigo-600">STL Unclaimed</span> v1.0
+                            <span className="font-semibold text-brand-teal uppercase tracking-tight">Glowing Fortune Gaming OPC</span> v1.0
                         </p>
                     </div>
                 </footer>

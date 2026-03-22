@@ -15,6 +15,7 @@ function CashDeposits({ user }) {
     const [selectedItem, setSelectedItem] = useState(null)
     const [showReceiptModal, setShowReceiptModal] = useState(false)
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
+    const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
     const [checkerCollectors, setCheckerCollectors] = useState([])
 
@@ -248,7 +249,7 @@ function CashDeposits({ user }) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-brand-teal border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading pending deposits...</p>
                 </div>
             </div>
@@ -267,7 +268,7 @@ function CashDeposits({ user }) {
             <div>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <Wallet className="w-8 h-8 text-emerald-600" />
+                        <Wallet className="w-8 h-8 text-brand-teal" />
                         Cash Deposits
                     </h1>
                     <button

@@ -102,7 +102,7 @@ function Areas({ user }) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-brand-teal border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading areas...</p>
                 </div>
             </div>
@@ -115,7 +115,7 @@ function Areas({ user }) {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <MapPin className="w-8 h-8 text-indigo-600" />
+                        <MapPin className="w-8 h-8 text-brand-teal" />
                         Service Areas
                     </h1>
                     <p className="text-gray-600 mt-1">Manage service areas for the system</p>
@@ -123,7 +123,7 @@ function Areas({ user }) {
                 {hasPermission(user, PERMISSIONS.MANAGE_USERS) && (
                     <button
                         onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-teal to-brand-gold text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                     >
                         <Plus className="w-5 h-5" />
                         Add Area
@@ -141,7 +141,7 @@ function Areas({ user }) {
                             placeholder="Search areas..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-teal"
                         />
                     </div>
                     <div>
@@ -162,7 +162,7 @@ function Areas({ user }) {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
+                        <thead className="bg-gradient-to-r from-brand-teal/5 to-brand-gold/5">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Area Name</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Description</th>
@@ -239,7 +239,7 @@ function Areas({ user }) {
                         className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in fade-in zoom-in duration-200 my-auto"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between rounded-t-2xl">
+                        <div className="px-6 py-4 bg-gradient-to-r from-brand-teal to-brand-gold text-white flex items-center justify-between rounded-t-2xl">
                             <h2 className="text-xl font-bold">{editingArea ? 'Edit Area' : 'Add Area'}</h2>
                             <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
                                 <X className="w-5 h-5" />

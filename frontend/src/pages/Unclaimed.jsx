@@ -22,6 +22,7 @@ function Unclaimed({ user }) {
     const [receiptImageUrl, setReceiptImageUrl] = useState('')
     const [selectedReceiptItem, setSelectedReceiptItem] = useState(null)
     const [editingItem, setEditingItem] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage] = useState(10)
     const [collectors, setCollectors] = useState([])
     const [checkerCollectors, setCheckerCollectors] = useState([])
@@ -426,7 +427,7 @@ function Unclaimed({ user }) {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <Package className="w-8 h-8 text-indigo-600" />
+                        <Package className="w-8 h-8 text-brand-teal" />
                         Unclaimed Items
                     </h1>
                     <p className="text-gray-600 mt-1">Manage and track unclaimed winning receipts</p>
@@ -436,10 +437,10 @@ function Unclaimed({ user }) {
                             <div className="flex flex-wrap gap-1">
                                 {(user.assigned_areas && user.assigned_areas.length > 0) ? (
                                     user.assigned_areas.map(a => (
-                                        <span key={a} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-100">{a}</span>
+                                        <span key={a} className="px-2 py-0.5 bg-brand-teal/5 text-brand-teal text-[10px] font-bold rounded-full border border-brand-teal/10">{a}</span>
                                     ))
                                 ) : (
-                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-100">{user.municipality}</span>
+                                    <span className="px-2 py-0.5 bg-brand-teal/5 text-brand-teal text-[10px] font-bold rounded-full border border-brand-teal/10">{user.municipality}</span>
                                 )}
                             </div>
                         </div>
@@ -448,7 +449,7 @@ function Unclaimed({ user }) {
                 <div className="flex flex-wrap gap-2">
                     <button
                         onClick={handleExportExcel}
-                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                        className="flex items-center gap-2 px-6 py-3 bg-brand-teal text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                     >
                         <Download className="w-5 h-5" />
                         Export
@@ -456,7 +457,7 @@ function Unclaimed({ user }) {
                     {hasPermission(user, PERMISSIONS.CREATE_UNCLAIMED) && (
                         <button
                             onClick={() => handleOpenModal()}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-teal to-brand-gold text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                         >
                             <Plus className="w-5 h-5" />
                             Add Unclaimed Item
@@ -616,7 +617,7 @@ function Unclaimed({ user }) {
                                                             setShowReceiptModal(true)
                                                         }}
                                                         title="View receipt"
-                                                        className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                                                        className="text-brand-teal hover:text-brand-gold transition-colors"
                                                     >
                                                         <ImageIcon className="w-4 h-4" />
                                                     </button>
@@ -681,7 +682,7 @@ function Unclaimed({ user }) {
                                                 {canPerformAction(user, PERMISSIONS.UPDATE_UNCLAIMED, item) && (
                                                     <button
                                                         onClick={() => handleOpenModal(item)}
-                                                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                        className="p-1.5 text-brand-teal hover:bg-brand-teal/5 rounded-lg transition-colors"
                                                         title="Edit"
                                                     >
                                                         <Edit className="w-4 h-4" />
@@ -737,7 +738,7 @@ function Unclaimed({ user }) {
                                                 key={pageNumber}
                                                 onClick={() => paginate(pageNumber)}
                                                 className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${currentPage === pageNumber
-                                                    ? 'bg-indigo-600 text-white'
+                                                    ? 'bg-brand-teal text-white'
                                                     : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                                                     }`}
                                             >
@@ -780,7 +781,7 @@ function Unclaimed({ user }) {
                             className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[95vh] flex flex-col my-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between sticky top-0 z-10">
+                            <div className="px-6 py-4 bg-gradient-to-r from-brand-teal to-brand-gold text-white flex items-center justify-between sticky top-0 z-10">
                                 <h2 className="text-xl font-bold">{editingItem ? 'Edit Unclaimed Item' : 'Add Unclaimed Item'}</h2>
                                 <button onClick={() => setShowModal(false)} className="p-1.5 hover:bg-white/20 rounded-lg transition-colors">
                                     <X className="w-5 h-5" />
@@ -1110,7 +1111,7 @@ function Unclaimed({ user }) {
                                                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-200 text-gray-600 font-semibold rounded-lg hover:bg-gray-50 transition-all">
                                                     Cancel
                                                 </button>
-                                                <button type="submit" className="flex-1 px-4 py-2 text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
+                                                <button type="submit" className="flex-1 px-4 py-2 text-sm bg-gradient-to-r from-brand-teal to-brand-gold text-white font-semibold rounded-lg shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all">
                                                     {editingItem ? 'Update Record' : 'Save Record'}
                                                 </button>
                                             </div>
@@ -1135,7 +1136,7 @@ function Unclaimed({ user }) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex items-center justify-between flex-shrink-0">
+                        <div className="px-6 py-4 bg-gradient-to-r from-brand-teal to-brand-gold text-white flex items-center justify-between flex-shrink-0">
                             <h2 className="text-xl font-bold flex items-center gap-2">
                                 <ImageIcon className="w-6 h-6" />
                                 Transaction Receipt

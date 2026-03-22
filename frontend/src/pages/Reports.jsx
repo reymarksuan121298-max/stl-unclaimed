@@ -138,7 +138,7 @@ function Reports({ user }) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-brand-teal border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600 text-lg font-medium">Loading reports...</p>
                 </div>
             </div>
@@ -151,8 +151,8 @@ function Reports({ user }) {
             <div>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
-                        <div className="p-3 bg-indigo-100 rounded-2xl">
-                            <FileText className="w-8 h-8 text-indigo-600" />
+                        <div className="p-3 bg-brand-teal/10 rounded-2xl">
+                            <FileText className="w-8 h-8 text-brand-teal" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-gray-900">Distribution Reports</h1>
@@ -161,7 +161,7 @@ function Reports({ user }) {
                     </div>
                     <button
                         onClick={handleExportExcel}
-                        className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transform transition-all duration-200"
+                        className="flex items-center justify-center gap-2 px-6 py-3 bg-brand-teal text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transform transition-all duration-200"
                     >
                         <Download className="w-5 h-5" />
                         Export to Excel
@@ -179,7 +179,7 @@ function Reports({ user }) {
                             placeholder="Search by name or collector..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-teal bg-slate-50/50"
                         />
                     </div>
 
@@ -188,7 +188,7 @@ function Reports({ user }) {
                         <select
                             value={filterCollector}
                             onChange={(e) => setFilterCollector(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-slate-50/50"
+                            className="w-full pl-10 pr-4 py-3 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-teal appearance-none bg-slate-50/50"
                         >
                             <option value="">All Collectors</option>
                             {collectors.map(c => (

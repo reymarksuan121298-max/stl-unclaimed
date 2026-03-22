@@ -198,7 +198,7 @@ function Users({ user }) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-brand-teal border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading users...</p>
                 </div>
             </div>
@@ -211,7 +211,7 @@ function Users({ user }) {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <UsersIcon className="w-8 h-8 text-indigo-600" />
+                        <UsersIcon className="w-8 h-8 text-brand-teal" />
                         User Management
                     </h1>
                     <p className="text-gray-600 mt-1">Manage system users and permissions</p>
@@ -220,7 +220,7 @@ function Users({ user }) {
 
                     <button
                         onClick={() => handleOpenModal()}
-                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
+                        className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-teal to-brand-gold text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
                     >
                         <Plus className="w-5 h-5" />
                         Add User
@@ -302,7 +302,7 @@ function Users({ user }) {
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
+                        <thead className="bg-gradient-to-r from-brand-teal/5 to-brand-gold/5">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Username</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Fullname</th>
@@ -725,7 +725,7 @@ function Users({ user }) {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header/Cover */}
-                        <div className="relative h-32 bg-gradient-to-r from-indigo-600 to-purple-700">
+                        <div className="relative h-32 bg-gradient-to-r from-brand-teal to-brand-gold">
                             <button 
                                 onClick={() => setShowViewModal(false)}
                                 className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-all z-10"
@@ -734,8 +734,8 @@ function Users({ user }) {
                             </button>
                             <div className="absolute -bottom-10 left-8">
                                 <div className="w-24 h-24 bg-white rounded-2xl shadow-xl flex items-center justify-center p-1">
-                                    <div className="w-full h-full bg-indigo-50 rounded-xl flex items-center justify-center border-2 border-indigo-100">
-                                        <span className="text-3xl font-bold text-indigo-600">
+                                    <div className="w-full h-full bg-brand-teal/5 rounded-xl flex items-center justify-center border-2 border-brand-teal/10">
+                                        <span className="text-3xl font-bold text-brand-teal">
                                             {viewingUser.fullname?.charAt(0).toUpperCase()}
                                         </span>
                                     </div>

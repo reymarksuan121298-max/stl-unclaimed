@@ -66,68 +66,53 @@ function Login({ onLogin }) {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-brand-teal via-[#1a4d55] to-brand-gold flex items-center justify-center p-4 relative overflow-hidden">
             {/* Sakura Leaves Falling Animation */}
             <style>{`
-                @keyframes sakuraFall {
+                @keyframes particleFall {
                     0% {
                         transform: translateY(-100px) translateX(0) rotate(0deg);
-                        opacity: 1;
+                        opacity: 0;
                     }
-                    25% {
-                        transform: translateY(25vh) translateX(20px) rotate(90deg);
-                    }
-                    50% {
-                        transform: translateY(50vh) translateX(-20px) rotate(180deg);
-                    }
-                    75% {
-                        transform: translateY(75vh) translateX(20px) rotate(270deg);
-                    }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
                     100% {
-                        transform: translateY(100vh) translateX(0) rotate(360deg);
-                        opacity: 0.5;
+                        transform: translateY(100vh) translateX(50px) rotate(360deg);
+                        opacity: 0;
                     }
                 }
 
-                .sakura {
+                .particle {
                     position: absolute;
-                    width: 15px;
-                    height: 15px;
-                    background: radial-gradient(circle at 30% 30%, #ffb7d5, #ff9ec5);
-                    border-radius: 0 100% 0 100%;
-                    animation: sakuraFall linear infinite;
-                    opacity: 0.9;
-                    box-shadow: 0 2px 8px rgba(255, 105, 180, 0.3);
-                }
-                .sakura::before {
-                    content: '';
-                    position: absolute;
-                    width: 100%;
-                    height: 100%;
-                    background: radial-gradient(circle at 30% 30%, #ffc9e0, #ffaad5);
-                    border-radius: 100% 0 100% 0;
-                    transform: rotate(90deg);
+                    width: 4px;
+                    height: 4px;
+                    background: #C59B4F;
+                    border-radius: 50%;
+                    animation: particleFall linear infinite;
+                    filter: blur(1px);
+                    box-shadow: 0 0 10px #C59B4F;
                 }
             `}</style>
             {/* Animated background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {/* Generate 20 sakura leaves with random properties */}
-                {[...Array(20)].map((_, i) => (
+                {[...Array(30)].map((_, i) => (
                     <div
                         key={i}
-                        className="sakura"
+                        className="particle"
                         style={{
                             left: `${Math.random() * 100}%`,
-                            animationDuration: `${8 + Math.random() * 10}s, ${2 + Math.random() * 2}s`,
-                            animationDelay: `${Math.random() * 5}s, ${Math.random() * 2}s`,
-                            width: `${15 + Math.random() * 10}px`,
-                            height: `${15 + Math.random() * 10}px`,
+                            animationDuration: `${5 + Math.random() * 8}s`,
+                            animationDelay: `${Math.random() * 10}s`,
+                            width: `${2 + Math.random() * 4}px`,
+                            height: `${2 + Math.random() * 4}px`,
+                            opacity: Math.random() * 0.5 + 0.5
                         }}
                     />
                 ))}
                 {/* Ambient glow effects */}
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-gold/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-teal/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
             </div>
 
             {/* Login Card */}
@@ -137,10 +122,10 @@ function Login({ onLogin }) {
                         <div className="inline-flex items-center justify-center mb-4">
                             <img src={unclaimedIcon} alt="Unclaimed Logo" className="w-32 h-20 object-cover rounded-2xl" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
-                            Welcome Back
+                        <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg uppercase tracking-wider">
+                            Glowing Fortune
                         </h1>
-                        <p className="text-white/90 drop-shadow">Sign in to Unclaimed Dashboard</p>
+                        <p className="text-brand-gold font-bold drop-shadow">Gaming OPC</p>
                     </div>
 
                     {/* Error Message */}
@@ -174,7 +159,7 @@ function Login({ onLogin }) {
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your username"
                                     autoComplete="username"
                                     disabled={isLoading}
@@ -199,7 +184,7 @@ function Login({ onLogin }) {
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+                                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-teal focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                                     placeholder="Enter your password"
                                     autoComplete="current-password"
                                     disabled={isLoading}
@@ -211,7 +196,7 @@ function Login({ onLogin }) {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transform transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                            className="w-full py-3.5 bg-gradient-to-r from-brand-teal to-brand-gold text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transform transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                         >
                             {isLoading ? (
                                 <>
@@ -244,8 +229,8 @@ function Login({ onLogin }) {
                 </div>
 
                 {/* Decorative elements */}
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-pink-400 to-purple-600 rounded-full blur-2xl opacity-50 animate-pulse"></div>
-                <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-gradient-to-br from-indigo-400 to-blue-600 rounded-full blur-2xl opacity-50 animate-pulse delay-1000"></div>
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-brand-gold to-brand-teal rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-gradient-to-br from-brand-teal to-brand-gold rounded-full blur-2xl opacity-50 animate-pulse delay-1000"></div>
             </div>
         </div>
     )

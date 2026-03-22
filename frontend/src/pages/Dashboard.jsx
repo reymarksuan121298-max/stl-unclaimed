@@ -107,9 +107,9 @@ function Dashboard({ user }) {
             name: 'Total Revenue',
             value: `₱${stats.totalRevenue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`,
             icon: TrendingUp,
-            color: 'from-purple-500 to-purple-600',
-            bgColor: 'bg-purple-50',
-            textColor: 'text-purple-600'
+            color: 'from-brand-gold to-[#a68241]',
+            bgColor: 'bg-brand-gold/10',
+            textColor: 'text-brand-gold'
         }
     ]
 
@@ -117,7 +117,7 @@ function Dashboard({ user }) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="w-16 h-16 border-4 border-brand-teal border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-gray-600">Loading dashboard...</p>
                 </div>
             </div>
@@ -161,7 +161,7 @@ function Dashboard({ user }) {
 
             {/* Recent Unclaimed Items */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-brand-teal/5 to-brand-gold/5">
                     <h2 className="text-xl font-bold text-gray-900">Recent Unclaimed Items</h2>
                     <p className="text-sm text-gray-600 mt-1">Latest unclaimed winnings</p>
                 </div>
