@@ -21,9 +21,6 @@
       },
       "package": "com.stl.unclaimed"
     },
-    "web": {
-      "favicon": "./assets/stl-logo.png"
-    },
     "extra": {
       "eas": {
         "projectId": "291ca353-5cf1-4cb7-9d38-d7c048a9f549"

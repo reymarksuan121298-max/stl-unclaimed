@@ -247,12 +247,10 @@ function Layout({ children, user }) {
                     {children}
                 </main>
 
-                {/* Footer */}
                 <footer className="fixed bottom-0 left-0 right-0 md:left-64 bg-white border-t border-gray-200 py-3 z-[60]">
-                    <div className="text-center">
-                        <p className="text-sm text-gray-600">
-                            <span className="font-semibold text-brand-teal uppercase tracking-tight">Glowing Fortune Gaming OPC</span> v1.0
-                        </p>
+                    <div className="text-center text-xs md:text-sm text-gray-600">
+                        <p>Developed By : <strong>Reymark Suan @ SMNR IT Group</strong></p>
+                        <p className="copyright">&copy; 2026 Growing Fortune OPC. All rights reserved.</p>
                     </div>
                 </footer>
             </div>
