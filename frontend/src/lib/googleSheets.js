@@ -87,8 +87,8 @@ export const googleSheetsHelpers = {
             }
 
             // Transform the data to match the expected format
-            let transformedData = mergedData.map(item => ({
-                id: item.transCode, // Use transCode as unique ID
+            let transformedData = mergedData.map((item, index) => ({
+                id: `${item.transCode}-${index}`, // Make ID unique even if transCode is duplicated
                 teller_name: item.tellerName,
                 trans_id: item.transCode,
                 draw_date: item.drawTime, // Pass through as-is

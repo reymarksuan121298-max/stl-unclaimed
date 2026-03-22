@@ -263,7 +263,20 @@ function Pending({ user }) {
                 })
             }
 
-            setItems(allItems)
+            // Identify duplicates across sources (only by trans_id if exists)
+            const transIdCounts = {}
+            allItems.forEach(item => {
+                if (item.trans_id) {
+                    transIdCounts[item.trans_id] = (transIdCounts[item.trans_id] || 0) + 1
+                }
+            })
+
+            const itemsWithDuplicateFlag = allItems.map(item => ({
+                ...item,
+                isDuplicate: item.trans_id ? transIdCounts[item.trans_id] > 1 : false
+            }))
+
+            setItems(itemsWithDuplicateFlag)
         } catch (error) {
             console.error('Error loading pending:', error)
             alert('Error loading pending items: ' + (error.message || 'Unknown error'))
@@ -536,12 +549,19 @@ function Pending({ user }) {
                                                             </td>
 
                                                             <td className="px-6 py-4">
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
-                                                                    item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
-                                                                        'bg-yellow-100 text-yellow-800'
-                                                                    }`}>
-                                                                    {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
-                                                                </span>
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize text-center ${item.days_overdue >= 3 ? 'bg-red-600 text-white' :
+                                                                        item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' :
+                                                                            'bg-yellow-100 text-yellow-800'
+                                                                        }`}>
+                                                                        {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
+                                                                    </span>
+                                                                    {item.isDuplicate && (
+                                                                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full text-center border border-orange-200">
+                                                                            Duplicate
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="px-6 py-4">
                                                                 {item.days_overdue >= 3 ? (
@@ -626,9 +646,16 @@ function Pending({ user }) {
                                                                 </span>
                                                             </td>
                                                             <td className="px-6 py-4">
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' : item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                                    {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
-                                                                </span>
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize text-center ${item.days_overdue >= 3 ? 'bg-red-600 text-white' : item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                                        {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
+                                                                    </span>
+                                                                    {item.isDuplicate && (
+                                                                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full text-center border border-orange-200">
+                                                                            Duplicate
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="px-6 py-4">
                                                                 {item.days_overdue >= 3 ? (
@@ -674,9 +701,16 @@ function Pending({ user }) {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${item.days_overdue >= 3 ? 'bg-red-600 text-white' : item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                        {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize text-center ${item.days_overdue >= 3 ? 'bg-red-600 text-white' : item.days_overdue >= 2 ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                            {item.days_overdue >= 3 ? 'Overdue' : item.days_overdue >= 2 ? 'Verifying' : 'Pending'}
+                                                        </span>
+                                                        {item.isDuplicate && (
+                                                            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-[10px] font-bold rounded-full text-center border border-orange-200">
+                                                                Duplicate
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {item.days_overdue >= 3 ? (
