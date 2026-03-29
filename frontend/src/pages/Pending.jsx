@@ -96,8 +96,8 @@ function Pending({ user }) {
 
             // Draw collector header
             const gradient = ctx.createLinearGradient(0, 0, width, 0)
-            gradient.addColorStop(0, '#06b6d4') // cyan-500
-            gradient.addColorStop(1, '#2563eb') // blue-600
+            gradient.addColorStop(0, '#10b981') // emerald-500
+            gradient.addColorStop(1, '#059669') // emerald-600
             ctx.fillStyle = gradient
             ctx.fillRect(0, 0, width, headerHeight)
 
@@ -454,7 +454,7 @@ function Pending({ user }) {
                         {user?.role?.toLowerCase() === 'collector' && user?.fullname && (
                             <thead>
                                 <tr>
-                                    <th colSpan="10" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-left">
+                                    <th colSpan="10" className="bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 text-left">
                                         <span className="text-xl font-bold text-white uppercase tracking-wide">
                                             {user.fullname}
                                         </span>
@@ -498,7 +498,7 @@ function Pending({ user }) {
                                             <React.Fragment key={`group-${collectorName}`}>
                                                 {/* Collector Header Row */}
                                                 <tr key={`header-${collectorName}`}>
-                                                    <td colSpan="9" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3">
+                                                    <td colSpan="9" className="bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3">
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-xl font-bold text-white uppercase tracking-wide">
                                                                 {collectorName}
@@ -599,7 +599,7 @@ function Pending({ user }) {
                                             <React.Fragment key={`group-${collectorName}`}>
                                                 {/* Collector Header Row */}
                                                 <tr>
-                                                    <td colSpan="9" className="bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3">
+                                                    <td colSpan="9" className="bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3">
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-xl font-bold text-white uppercase tracking-wide">
                                                                 {collectorName}
