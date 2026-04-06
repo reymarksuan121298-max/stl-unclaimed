@@ -26,6 +26,7 @@ function Unclaimed({ user }) {
     const [itemsPerPage] = useState(10)
     const [collectors, setCollectors] = useState([])
     const [checkerCollectors, setCheckerCollectors] = useState([])
+    const [checkerCashiersData, setCheckerCashiersData] = useState([])
 
     useEffect(() => {
         const fetchCheckerCollectors = async () => {
@@ -33,6 +34,7 @@ function Unclaimed({ user }) {
                 try {
                     const cashiers = await dataHelpers.getUsers({ usernames: user.assigned_cashiers, role: 'cashier', status: 'active' })
                     if (cashiers && cashiers.length > 0) {
+                        setCheckerCashiersData(cashiers)
                         const allCollectors = cashiers.flatMap(c => c.assigned_collectors || [])
                         setCheckerCollectors([...new Set(allCollectors)])
                     }
@@ -58,7 +60,8 @@ function Unclaimed({ user }) {
         return_date: '',
         status: 'Unclaimed',
         receipt_image: '',
-        receipt_file: null
+        receipt_file: null,
+        checker_cashier_filter: ''
     })
 
     useEffect(() => {
@@ -118,15 +121,34 @@ function Unclaimed({ user }) {
     const loadCollectors = async (areaName = '') => {
         try {
             const filters = { role: 'collector', status: 'active' }
-            if (areaName) filters.municipality = areaName
             
-            // If checker, limit choices to their assigned collectors
-            if (user?.role?.toLowerCase() === 'checker' && checkerCollectors.length > 0) {
-                filters.usernames = checkerCollectors
+            // Limit by area only if not checker or cashier. Checkers and cashiers retrieve based on assignments.
+            if (areaName && user?.role?.toLowerCase() !== 'checker' && user?.role?.toLowerCase() !== 'cashier') {
+                filters.municipality = areaName
             }
-            
+
             const data = await dataHelpers.getUsers(filters)
-            setCollectors(data)
+            
+            let finalCollectors = data;
+
+            // If checker, limit choices to their assigned collectors (permissively match username or fullname)
+            if (user?.role?.toLowerCase() === 'checker') {
+                if (checkerCollectors && checkerCollectors.length > 0) {
+                    finalCollectors = data.filter(c => checkerCollectors.includes(c.username) || checkerCollectors.includes(c.fullname))
+                } else {
+                    finalCollectors = []
+                }
+            }
+            // If cashier, limit choices to their assigned collectors (permissively match username or fullname)
+            else if (user?.role?.toLowerCase() === 'cashier') {
+                if (user?.assigned_collectors && user.assigned_collectors.length > 0) {
+                    finalCollectors = data.filter(c => user.assigned_collectors.includes(c.username) || user.assigned_collectors.includes(c.fullname))
+                } else {
+                    finalCollectors = []
+                }
+            }
+
+            setCollectors(finalCollectors)
         } catch (error) {
             console.error('Error loading collectors:', error)
         }
@@ -288,7 +310,8 @@ function Unclaimed({ user }) {
                 receipt_image: item.receipt_image || '',
                 receipt_file: null,
                 reference_number: item.reference_number || '',
-                receiver_contact: item.receiver_contact || ''
+                receiver_contact: item.receiver_contact || '',
+                checker_cashier_filter: ''
             })
             // Fetch collectors for this item's area
             if (item.area) {
@@ -316,7 +339,8 @@ function Unclaimed({ user }) {
                 receipt_image: '',
                 receipt_file: null,
                 reference_number: '',
-                receiver_contact: ''
+                receiver_contact: '',
+                checker_cashier_filter: ''
             })
             loadCollectors()
         }
@@ -839,14 +863,12 @@ function Unclaimed({ user }) {
                                                         className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                     >
                                                         <option value="">Select Bet Code</option>
-                                                        <option value="S3">S3 - Swertres</option>
-                                                        <option value="L3">L3 - Lucky 3</option>
-                                                        <option value="S2">S2 - Swertres 2</option>
-                                                        <option value="4D">4D - 4 Digit</option>
-                                                        <option value="6D">6D - 6 Digit</option>
-                                                        <option value="STL">STL - Small Town Lottery</option>
+                                                        <option value="TS3">TS3 </option>
+                                                        <option value="RS3">RS3 </option>
+                                                        <option value="LS3">LS3 </option>
+
                                                     </select>
-                                                    <p className="text-xs text-gray-500">Type of bet (S3, L3, S2, 4D, etc.)</p>
+                                                    <p className="text-xs text-gray-500">Type of bet (TS3, RS3, LS3)</p>
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-draw-date" className="text-xs font-semibold text-gray-700">Draw Date</label>
@@ -1076,6 +1098,26 @@ function Unclaimed({ user }) {
                                                         ))}
                                                     </select>
                                                 </div>
+                                                {user?.role?.toLowerCase() === 'checker' && (
+                                                    <div className="space-y-1">
+                                                        <label htmlFor="modal-checker-cashier" className="text-xs font-semibold text-gray-700">Cashier Filter</label>
+                                                        <select
+                                                            id="modal-checker-cashier"
+                                                            value={formData.checker_cashier_filter || ''}
+                                                            onChange={(e) => {
+                                                                setFormData({ ...formData, checker_cashier_filter: e.target.value, collector: '' })
+                                                            }}
+                                                            disabled={isCollectorEditMode}
+                                                            className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
+                                                        >
+                                                            <option value="">All Assigned Cashiers</option>
+                                                            {checkerCashiersData.map(c => (
+                                                                <option key={c.id} value={c.username}>{c.fullname} ({c.username})</option>
+                                                            ))}
+                                                        </select>
+                                                        <p className="text-xs text-gray-500">Select a cashier to filter the collector list</p>
+                                                    </div>
+                                                )}
                                                 <div className="space-y-1">
                                                     <label htmlFor="modal-collector" className="text-xs font-semibold text-gray-700">Collector</label>
                                                     <select
@@ -1087,11 +1129,25 @@ function Unclaimed({ user }) {
                                                         className={`w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition-all ${isCollectorEditMode || user?.role?.toLowerCase() === 'collector' ? 'bg-gray-100 cursor-not-allowed' : 'bg-gray-50'}`}
                                                     >
                                                         <option value="">Select Collector</option>
-                                                        {collectors.map(collector => (
-                                                            <option key={collector.id} value={collector.fullname}>
-                                                                {collector.fullname} {collector.assigned_areas && collector.assigned_areas.length > 0 ? `(${collector.assigned_areas.join(', ')})` : collector.municipality ? `(${collector.municipality})` : ''}
-                                                            </option>
-                                                        ))}
+                                                        {(() => {
+                                                            let displayCollectors = collectors;
+                                                            if (user?.role?.toLowerCase() === 'checker' && formData.checker_cashier_filter) {
+                                                                const selectedCashier = checkerCashiersData.find(c => c.username === formData.checker_cashier_filter);
+                                                                if (selectedCashier && selectedCashier.assigned_collectors) {
+                                                                    displayCollectors = displayCollectors.filter(c => 
+                                                                        selectedCashier.assigned_collectors.includes(c.username) || 
+                                                                        selectedCashier.assigned_collectors.includes(c.fullname)
+                                                                    );
+                                                                } else {
+                                                                    displayCollectors = [];
+                                                                }
+                                                            }
+                                                            return displayCollectors.map(collector => (
+                                                                <option key={collector.id} value={collector.fullname}>
+                                                                    {collector.fullname} {collector.assigned_areas && collector.assigned_areas.length > 0 ? `(${collector.assigned_areas.join(', ')})` : collector.municipality ? `(${collector.municipality})` : ''}
+                                                                </option>
+                                                            ));
+                                                        })()}
                                                     </select>
                                                 </div>
                                                 <div className="space-y-1">
